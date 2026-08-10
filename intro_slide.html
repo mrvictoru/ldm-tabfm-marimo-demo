@@ -1,0 +1,928 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LDM × TabFM — marimo demo deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===========================================================
+       Deck framework — DO NOT EDIT the rules in this <style> block.
+       Edit only inside the second <style> block below (per-deck
+       styles) and inside <section class="slide"> bodies.
+
+       Contract this framework provides:
+         - 1920×1080 fixed canvas, scaled to fit the viewport
+         - Only .slide.active is visible at a time
+         - Prev/next + counter rendered outside the scaled stage
+         - Keyboard (← → space PgUp PgDn Home End), click, and stored
+           position survive iframe focus quirks
+         - "Save as PDF" produces a multi-page vertical PDF, one slide
+           per page, by toggling every slide visible under @media print
+       =========================================================== */
+    :root {
+      /* SLOT: theme tokens — the only top-level CSS the agent edits.
+         Add or override --bg / --fg / --accent / etc. here. */
+      --bg: #0a0c10;
+      --fg: #e8f0ec;
+      --muted: #93a099;
+      --accent: #7ed3a4;
+      --surface: #11151b;
+      --shell: #050608;
+
+      /* CRT terminal palette — dark mode defaults */
+      --green: #7ed3a4;
+      --amber: #e8c07a;
+      --red: #e5746d;
+      --muted2: #8a938c;
+      --keyword: #9ec8ff;
+      --bar-bg: rgba(10, 12, 16, 0.72);
+      --notes-bg: rgba(10, 12, 16, 0.35);
+      --code-bg: rgba(17, 21, 27, 0.88);
+      --line-soft: rgba(126, 211, 164, 0.10);
+      --line: rgba(126, 211, 164, 0.22);
+      --grid-color: rgba(126, 211, 164, 0.05);
+      --scan-color: rgba(0, 0, 0, 0.16);
+      --vignette: rgba(0, 0, 0, 0.5);
+      --dot-glow-r: rgba(229, 116, 109, 0.75);
+      --dot-glow-g: rgba(126, 211, 164, 0.75);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--shell);
+      color: var(--fg);
+      font: 18px/1.5 -apple-system, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .deck-shell {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+    .deck-stage {
+      width: 1920px;
+      height: 1080px;
+      background: var(--bg);
+      position: relative;
+      transform-origin: top left;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    /* Visibility toggle hardened with :not(.active) + !important so cascade
+       order can't break it. The previous `.slide { display:none }` rule
+       lost the cascade whenever a per-slide variant class (e.g.
+       `.s-cold { display:grid }`) was declared after it on the same
+       element — every slide silently became visible at once. The
+       `!important` is a belt-and-suspenders against agent code that adds
+       `!important` on variant classes too. */
+    .slide:not(.active) { display: none !important; }
+    /* The active default uses :where() so it has zero specificity. Per-slide
+       variant classes like `.s-cold { display:grid }` or
+       `.s-magazine { display:block }` can override the default flex layout
+       just by declaring `display` — no need for the variant to be more
+       specific. The hide rule above still wins for inactive slides. */
+    :where(.slide.active) { display: flex; flex-direction: column; }
+
+    /* Chrome — counter + prev/next live outside the scaled stage so they
+       don't shrink with it. Do not relocate them inside .deck-stage. */
+    .deck-counter {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(10, 14, 26, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.18em;
+      z-index: 1000;
+    }
+    .deck-counter button {
+      width: 36px; height: 36px;
+      background: transparent;
+      color: #fff;
+      border: 0;
+      border-radius: 50%;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.15s;
+    }
+    .deck-counter button:hover { background: rgba(255, 255, 255, 0.12); }
+    .deck-counter button[disabled] { opacity: 0.3; cursor: default; }
+    .deck-counter .deck-count {
+      padding: 0 14px;
+      letter-spacing: 0.22em;
+    }
+    .deck-counter .deck-count .total { color: rgba(255, 255, 255, 0.5); }
+    .deck-hint {
+      position: fixed;
+      bottom: 26px;
+      right: 28px;
+      color: rgba(255, 255, 255, 0.4);
+      font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    /* Print / PDF stitching — every slide stacks top-to-bottom, one per
+       page. The viewer's "Share → PDF" relies on this; do not remove. */
+    @media print {
+      @page { size: 1920px 1080px; margin: 0; }
+      html, body {
+        width: 1920px !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+      .deck-shell {
+        position: static !important;
+        display: block !important;
+        inset: auto !important;
+      }
+      .deck-stage {
+        width: 1920px !important;
+        height: auto !important;
+        transform: none !important;
+        box-shadow: none !important;
+        position: static !important;
+      }
+      .slide {
+        display: flex !important;
+        position: relative !important;
+        inset: auto !important;
+        width: 1920px !important;
+        height: 1080px !important;
+        page-break-after: always;
+        break-after: page;
+      }
+      .slide:last-child { page-break-after: auto; break-after: auto; }
+      .deck-counter, .deck-hint { display: none !important; }
+    }
+  </style>
+  <style>
+    /* SLOT: per-deck styles — typography, layout helpers, slide variants.
+       Add classes used by the slide content below, e.g. .title, .big-stat,
+       .grid-3. Do not redefine .deck-shell / .deck-stage / .slide /
+       .deck-counter / .deck-hint or anything inside @media print. */
+
+    /* ---- base terminal typography ---- */
+    html, body {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* ---- LIGHT MODE override (toggle on <html class="light">) ----
+       Overrides :root CRT tokens while keeping the same CRT metaphor:
+       lighter canvas, deeper ink, darker mint accent, softer scanlines. */
+    html.light {
+      --bg: #f5f7f9;
+      --fg: #13171c;
+      --muted: #5b6470;
+      --accent: #0f7b4f;
+      --surface: #ffffff;
+      --shell: #cdd3d9;
+      --green: #0f7b4f;
+      --amber: #8a5a00;
+      --red: #b34232;
+      --muted2: #66717f;
+      --keyword: #1a56db;
+      --bar-bg: rgba(255, 255, 255, 0.85);
+      --notes-bg: rgba(0, 0, 0, 0.035);
+      --code-bg: #edf1f4;
+      --line-soft: rgba(15, 123, 79, 0.10);
+      --line: rgba(15, 123, 79, 0.26);
+      --grid-color: rgba(15, 123, 79, 0.07);
+      --scan-color: rgba(0, 0, 0, 0.05);
+      --vignette: rgba(28, 38, 48, 0.16);
+      --dot-glow-r: rgba(179, 66, 50, 0.55);
+      --dot-glow-g: rgba(15, 123, 79, 0.55);
+    }
+    html.light .deck-hint { color: rgba(20, 30, 40, 0.45); }
+
+    /* ---- CRT overlay: cybernetic grid + scanlines + vignette + flicker ---- */
+    .deck-fx {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      animation: crt-flicker 5s infinite;
+    }
+    .deck-fx::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+    .deck-fx::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(120% 90% at 50% 45%, transparent 55%, var(--vignette) 100%),
+        repeating-linear-gradient(0deg, var(--scan-color) 0px, var(--scan-color) 1px, transparent 2px, transparent 4px);
+    }
+    @keyframes crt-flicker {
+      0%, 93%, 100% { opacity: 1; }
+      94% { opacity: 0.93; }
+      95% { opacity: 0.98; }
+      97% { opacity: 0.94; }
+      98% { opacity: 1; }
+    }
+
+    /* ---- terminal window chrome ---- */
+    .term-bar {
+      height: 76px;
+      flex: 0 0 76px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 0 36px;
+      border-bottom: 1px solid var(--line-soft);
+      background: var(--bar-bg);
+    }
+    .dots { display: flex; align-items: center; gap: 12px; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .dot.red { background: var(--red); box-shadow: 0 0 14px var(--dot-glow-r); }
+    .dot.green { background: var(--green); box-shadow: 0 0 14px var(--dot-glow-g); }
+    .path {
+      color: var(--muted2);
+      font-size: 22px;
+      letter-spacing: 0.04em;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .label { color: var(--green); font-size: 20px; letter-spacing: 0.18em; white-space: nowrap; }
+
+    /* ---- theme switch (lives in every terminal chrome bar) ---- */
+    .theme-switch {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 15px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--green);
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 8px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .theme-switch:hover { background: var(--line-soft); border-color: var(--green); }
+
+    /* ---- command-line titles ---- */
+    .cmdline {
+      font-size: 32px;
+      color: var(--fg);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cmdline .p { color: var(--green); }
+    .cmdline .flag { color: var(--amber); }
+    .cmdline .v { color: var(--green); }
+    .cursor {
+      display: inline-block;
+      width: 0.55em;
+      height: 1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1.06s steps(1) infinite;
+    }
+    @keyframes blink { 50%, 100% { opacity: 0; } }
+
+    /* ---- content layout ---- */
+    .s-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 30px;
+      padding: 34px 64px 10px;
+      min-height: 0;
+    }
+    .s-cover {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 30px;
+      padding: 30px 96px 10px;
+      min-height: 0;
+    }
+    .h2 {
+      color: var(--green);
+      font-size: 58px;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      max-width: 1600px;
+    }
+    .cover-title {
+      color: var(--green);
+      font-size: 104px;
+      line-height: 1.06;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      max-width: 1700px;
+    }
+    .cover-sub {
+      color: var(--muted2);
+      font-size: 29px;
+      line-height: 1.5;
+      max-width: 64ch;
+    }
+    .tags-row { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    /* ---- tags: amber / green / red three levels ---- */
+    .tag {
+      display: inline-block;
+      padding: 8px 18px;
+      font-size: 20px;
+      line-height: 1.1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border: 1px solid;
+      border-radius: 2px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .tag.g { color: var(--green); border-color: rgba(126, 211, 164, 0.5); background: rgba(126, 211, 164, 0.06); }
+    .tag.a { color: var(--amber); border-color: rgba(232, 192, 122, 0.5); background: rgba(232, 192, 122, 0.06); }
+    .tag.r { color: var(--red); border-color: rgba(229, 116, 109, 0.5); background: rgba(229, 116, 109, 0.06); }
+    html.light .tag.g { border-color: rgba(15, 123, 79, 0.4); background: rgba(15, 123, 79, 0.06); }
+    html.light .tag.a { border-color: rgba(138, 90, 0, 0.5); background: rgba(138, 90, 0, 0.06); }
+    html.light .tag.r { border-color: rgba(179, 66, 50, 0.5); background: rgba(179, 66, 50, 0.06); }
+    .ok-tag { color: var(--green); }
+    .warn-tag { color: var(--amber); }
+    .crit-tag { color: var(--red); }
+
+    /* ---- speaker notes strip ---- */
+    .notes {
+      flex: 0 0 auto;
+      margin: 8px 48px 36px;
+      padding: 16px 24px;
+      border-top: 1px solid var(--line-soft);
+      background: var(--notes-bg);
+      color: var(--muted2);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    .n-label {
+      display: inline-block;
+      color: var(--amber);
+      letter-spacing: 0.2em;
+      font-size: 13px;
+      margin-right: 14px;
+      text-transform: uppercase;
+    }
+
+    /* ---- code blocks ---- */
+    .code {
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      padding: 28px 32px;
+      font-size: 26px;
+      line-height: 1.6;
+      color: var(--fg);
+      white-space: pre;
+      overflow: hidden;
+      font-variant-numeric: tabular-nums;
+    }
+    .code .c { color: var(--muted2); }
+    .code .k { color: var(--keyword); }
+    .code .s { color: var(--amber); }
+    .code .v { color: var(--green); }
+    .code .hdr { color: var(--green); }
+
+    /* ---- splits / steps ---- */
+    .split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; }
+    .steps { display: flex; flex-direction: column; gap: 26px; }
+    .step {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      color: var(--muted2);
+      font-size: 26px;
+      line-height: 1.4;
+    }
+    .step .tag { flex: 0 0 auto; font-size: 18px; padding: 6px 14px; }
+
+    /* ---- panels ---- */
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--code-bg);
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--fg);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 6px;
+    }
+    .panel-text { color: var(--muted2); font-size: 24px; line-height: 1.45; }
+
+    /* ---- meta / footnote line ---- */
+    .meta-line { color: var(--muted2); font-size: 22px; }
+    .statement {
+      color: var(--muted2);
+      font-size: 27px;
+      line-height: 1.5;
+      max-width: 52ch;
+    }
+
+    /* ---- stroke-only histogram ---- */
+    .hist-wrap { text-align: center; }
+    .hist-wrap svg { width: 100%; height: auto; max-width: 1400px; display: block; margin: 0 auto; }
+    .hist-label { color: var(--muted2); font-size: 18px; margin-top: 10px; }
+    .hist-svg .axis { stroke: var(--green); stroke-width: 2; opacity: 0.55; }
+    .hist-svg .bar { fill: none; stroke: var(--green); stroke-width: 2; }
+    .hist-svg .lbl { fill: var(--muted2); font-family: 'JetBrains Mono', monospace; font-size: 18px; }
+    .hist-svg .mark { stroke: var(--amber); stroke-width: 3; stroke-dasharray: 8 8; }
+    .hist-svg .lbl-mark { fill: var(--amber); font-family: 'JetBrains Mono', monospace; font-size: 20px; }
+
+    /* ---- closing ---- */
+    .take-title {
+      color: var(--green);
+      font-size: 112px;
+      line-height: 1.08;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      max-width: 1700px;
+    }
+    .take-line { color: var(--muted2); font-size: 30px; }
+    .take-footer { color: var(--muted2); font-size: 24px; margin-top: 6px; }
+
+    /* hide UI chrome from saved PDFs */
+    @media print {
+      .theme-switch { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck-shell">
+    <div class="deck-stage" id="deck-stage">
+
+      <!-- ============ SLIDES ============ -->
+
+      <!-- 01 Title -->
+      <section class="slide active" data-screen-label="01 Title">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">01 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-cover">
+          <div class="cmdline"><span class="p">$</span> marimo <span class="flag">run</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="cursor"></span></div>
+          <h1 class="cover-title">FROM DASHBOARDS<br />TO DECISION SUPPORT.</h1>
+          <p class="cover-sub">An LDM-style demo: historical business data + a pretrained tabular model + an interactive marimo notebook. Score a new case, compare with similar past cases, test what-if changes before deciding.</p>
+          <div class="tags-row">
+            <span class="tag a">LDM-STYLE</span>
+            <span class="tag g">TABFM</span>
+            <span class="tag g">WHAT-IF</span>
+          </div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“Most analytics teams today are very good at showing what already happened — dashboards, reports, summaries, trends. But those usually stop short of helping a user decide what to do in a live case. This demo recreates the pattern from the IBM LDM article: score a case, compare it to similar past cases, and test possible changes — using a pretrained tabular model called TabFM and an interactive marimo notebook.”</div>
+      </section>
+
+      <!-- 02 The Shift -->
+      <section class="slide" data-screen-label="02 The Shift">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">02 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--pattern decision_support</span> <span class="cursor"></span></div>
+          <h2 class="h2">REPORT THE PAST.<br />OR ASSIST THE DECISION.</h2>
+          <div class="split">
+            <div class="panel">
+              <div class="panel-head"><span class="tag a">RETROSPECTIVE</span> TRADITIONAL ANALYTICS</div>
+              <div class="panel-text">&gt; what happened?</div>
+              <div class="panel-text">&gt; how many?</div>
+              <div class="panel-text">&gt; where did performance change?</div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><span class="tag g">DECISION-TIME</span> LDM-STYLE ANALYTICS</div>
+              <div class="panel-text">&gt; what does this new case look like?</div>
+              <div class="panel-text">&gt; how risky or promising is it?</div>
+              <div class="panel-text">&gt; what similar cases have we seen before?</div>
+              <div class="panel-text">&gt; what if we change one or two decision variables?</div>
+            </div>
+          </div>
+          <div class="hist-wrap">
+            <svg class="hist-svg" viewBox="0 0 1200 140" width="1200" height="140" role="img" aria-label="score distribution with new case marker">
+              <line class="axis" x1="30" y1="120" x2="1170" y2="120"/>
+              <rect class="bar" x="90" y="90" width="50" height="30"/>
+              <rect class="bar" x="170" y="80" width="50" height="40"/>
+              <rect class="bar" x="250" y="60" width="50" height="60"/>
+              <rect class="bar" x="330" y="55" width="50" height="65"/>
+              <rect class="bar" x="410" y="70" width="50" height="50"/>
+              <rect class="bar" x="710" y="75" width="50" height="45"/>
+              <rect class="bar" x="790" y="85" width="50" height="35"/>
+              <rect class="bar" x="870" y="95" width="50" height="25"/>
+              <rect class="bar" x="950" y="102" width="50" height="18"/>
+              <line class="mark" x1="520" y1="12" x2="520" y2="120"/>
+              <text class="lbl" x="34" y="22">count →</text>
+              <text class="lbl" x="1095" y="136">score →</text>
+              <text class="lbl-mark" x="532" y="18">new case</text>
+            </svg>
+            <div class="hist-label"># historical records set the context — the score marks where a new case lands</div>
+          </div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“Traditional analytics often answers: what happened, how many, where did performance change. LDM-style analytics aims to answer: what does this new case look like, how risky or promising is it, what similar cases have we seen, what if we change a decision variable. The opportunity is to move from retrospective reporting to interactive decision support.”</div>
+      </section>
+
+      <!-- 03 IBM LDM Idea -->
+      <section class="slide" data-screen-label="03 IBM LDM Idea">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">03 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--concept large_database_models</span> <span class="cursor"></span></div>
+          <h2 class="h2">WHAT IBM'S LDM IDEA POINTS TOWARD.</h2>
+          <div class="statement">Large database models (LDMs): systems that help users work directly with enterprise data in a smarter, more decision-oriented way.</div>
+          <div class="steps">
+            <div class="step"><span class="tag g">01</span><span>use historical records as intelligence — not just storage</span></div>
+            <div class="step"><span class="tag g">02</span><span>support the decision in the moment — “what is the likely outcome right now?”</span></div>
+            <div class="step"><span class="tag g">03</span><span>enable what-if reasoning — change inputs, see the expected outcome change</span></div>
+            <div class="step"><span class="tag g">04</span><span>bring back similar prior cases — context for the current case</span></div>
+            <div class="step"><span class="tag a">05</span><span>move faster from idea to business value — operationalize historical data quicker</span></div>
+          </div>
+          <div class="meta-line"># a shift from dashboards that describe the past to systems that assist a decision in the present</div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“What IBM is pointing toward is a shift from dashboards that describe the past to systems that actively assist a decision in the present. Key ideas: historical records as intelligence, decision-time support, what-if reasoning, similar-case retrieval, and speed from idea to business value.”</div>
+      </section>
+
+      <!-- 04 LDM-style mapping -->
+      <section class="slide" data-screen-label="04 LDM-style Mapping">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">04 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm map <span class="flag">--notebook marimo</span> <span class="flag">--concept ldm</span> <span class="cursor"></span></div>
+          <h2 class="h2">WE REPRODUCED THE PATTERN.<br />NOT THE ARCHITECTURE.</h2>
+          <div class="split">
+            <div>
+              <div class="statement">This notebook is an LDM-style demonstration. It recreates the business functions described in the article using a pretrained tabular model, interactive controls, and historical-case retrieval.</div>
+              <div class="tags-row" style="margin-top: 30px;">
+                <span class="tag g">SAME INTERACTION PATTERN</span>
+                <span class="tag r">NOT IBM ARCHITECTURE</span>
+              </div>
+              <div class="meta-line" style="margin-top: 18px;"># demonstrating the same business interaction pattern with tools we can access today</div>
+            </div>
+            <div class="steps">
+              <div class="step"><span class="tag g">01</span><span>fraud triage — score a new transaction, surface suspicious patterns</span></div>
+              <div class="step"><span class="tag g">02</span><span>what-if analysis — change attributes, instantly recalculate the signal</span></div>
+              <div class="step"><span class="tag g">03</span><span>similar historical cases — comparable prior examples, more context</span></div>
+              <div class="step"><span class="tag g">04</span><span>insurance quote optimization — estimate likelihood of acceptance</span></div>
+              <div class="step"><span class="tag g">05</span><span>retail alternatives — similar intent, better health profile</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“Be precise: the notebook is not IBM’s product architecture. It demonstrates the same business interaction pattern with tools we can access today — a pretrained tabular model, interactive controls, and historical-case retrieval.”</div>
+      </section>
+
+      <!-- 05 Why TabFM -->
+      <section class="slide" data-screen-label="05 Why TabFM">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">05 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--model tabfm</span> <span class="cursor"></span></div>
+          <h2 class="h2">ROWS, COLUMNS, ATTRIBUTES.<br />NOT ESSAYS.</h2>
+          <div class="split">
+            <pre class="code"><span class="c"># pretrained foundation model for tabular data</span>
+tabfm = <span class="v">load_tabfm</span>()        <span class="c"># ← illustrative</span>
+
+<span class="c"># rows, columns, attributes in …</span>
+signal = tabfm.<span class="v">score</span>(case)
+
+<span class="c"># … similar past cases back out</span>
+similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span>)</pre>
+            <div class="steps">
+              <div class="step"><span class="tag g">PRETRAINED</span><span>foundation model built for structured data — not text</span></div>
+              <div class="step"><span class="tag a">LESS FROM SCRATCH</span><span>reduces manual model-building before value testing</span></div>
+              <div class="step"><span class="tag g">CREDIBLE</span><span>foundation-model thinking beyond text</span></div>
+              <div class="step"><span class="tag g">LOWER BARRIER</span><span>advanced analytics without deep ML infrastructure</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is built for that kind of data. For teams where deep ML specialization is limited, pretrained tabular models lower the barrier to building decision-support systems.”</div>
+      </section>
+
+      <!-- 06 Feature Engineering -->
+      <section class="slide" data-screen-label="06 Feature Engineering">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">06 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--feature_engineering --honest</span> <span class="cursor"></span></div>
+          <h2 class="h2">LESS HANDCRAFTED MODELING.<br />NOT ZERO.</h2>
+          <div class="split">
+            <div class="panel">
+              <div class="panel-head"><span class="tag r">TRADITIONAL PATH</span></div>
+              <div class="panel-text">&gt; choose features</div>
+              <div class="panel-text">&gt; engineer transformations</div>
+              <div class="panel-text">&gt; train custom models</div>
+              <div class="panel-text">&gt; iterate many times</div>
+              <div class="panel-text">&gt; long delay from data to decision tool</div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><span class="tag g">LDM-STYLE PROMISE</span></div>
+              <div class="panel-text">&gt; model + historical data carry more intelligence</div>
+              <div class="panel-text">&gt; fewer bespoke feature pipelines</div>
+              <div class="panel-text">&gt; prototype business value earlier</div>
+            </div>
+          </div>
+          <div class="meta-line"><span class="ok-tag">✓ reduced manual feature engineering</span> — not zero · the demo still adds a few simple derived fields: balance deltas, error measures</div>
+          <div class="meta-line"># domain knowledge does not disappear · more intelligence comes from model + historical data</div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“Traditionally, getting from database rows to a useful predictive workflow requires a lot of data-science work: choosing features, engineering transformations, training custom models, iterating many times. The LDM idea is attractive because it promises to reduce that custom effort significantly. The right claim is not ‘no data-science work is needed.’ The right claim is ‘the amount of custom work needed to reach a useful prototype can be much lower.’”</div>
+      </section>
+
+      <!-- 07 Fraud Triage -->
+      <section class="slide" data-screen-label="07 Fraud Triage">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">07 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> marimo <span class="flag">run</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="flag">--case fraud_triage --trace</span> <span class="cursor"></span></div>
+          <h2 class="h2">SCORE A NEW CASE.<br />SHOW WHY. LET THEM TEST.</h2>
+          <div class="split">
+            <pre class="code"><span class="c"># fraud triage · interactive what-if</span>
+<span class="k">case</span> = <span class="v">dict</span>(<span class="s">amount=2400</span>, <span class="s">frequency=12</span>)
+signal = <span class="v">score</span>(case)    <span class="c"># 0.71 · </span><span class="warn-tag">[WARN]</span>
+
+<span class="k">case</span>[<span class="s">"amount"</span>] = <span class="v">1500</span>
+<span class="k">case</span>[<span class="s">"frequency"</span>] = <span class="v">4</span>
+signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span><span class="ok-tag">[OK]</span></pre>
+            <pre class="code"><span class="c"># similar historical cases</span>
+<span class="hdr">rank  case  score  sim</span>
+01    204   0.70   0.93
+02    118   0.73   0.88
+03    331   0.68   0.85
+04    077   0.74   0.81
+05    502   0.66   0.76
+<span class="c"># sample rows — illustrative</span></pre>
+          </div>
+          <div class="tags-row">
+            <span class="tag g">TRIAGE</span>
+            <span class="tag a">WHAT-IF</span>
+            <span class="tag g">SIMILAR RETRIEVAL</span>
+          </div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“This is where the concept becomes operational. A user can edit the current case directly and see how the signal changes. The score is a decision-support signal — higher means more similar to past fraud-like cases — not an automatic verdict. Similar-case retrieval makes the system easier to trust and use, because the analyst is not forced to treat the model as a black box.”</div>
+      </section>
+
+      <!-- 08 Extensions -->
+      <section class="slide" data-screen-label="08 Extensions">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">08 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm apply <span class="flag">--domain insurance</span> <span class="flag">--domain retail</span> <span class="cursor"></span></div>
+          <h2 class="h2">SAME PATTERN. NEW STORY.</h2>
+          <div class="split">
+            <div class="panel">
+              <div><span class="tag g">INSURANCE</span></div>
+              <div class="panel-text">past claims → acceptance likelihood → try discounts &amp; deductibles before choosing a quote</div>
+            </div>
+            <div class="panel">
+              <div><span class="tag g">RETAIL</span></div>
+              <div class="panel-text">past orders → intent + health objective → similar products, better on a target dimension</div>
+            </div>
+          </div>
+          <pre class="code"><span class="c"># one pattern, three stories from the demo</span>
+<span class="v">1.</span> fraud triage          <span class="c">→ score + similar cases + what-if</span>
+<span class="v">2.</span> insurance quote opt   <span class="c">→ acceptance likelihood + what-if</span>
+<span class="v">3.</span> retail alternatives   <span class="c">→ similar intent + health objective</span></pre>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“Insurance mirrors one of the strongest examples in the IBM article: estimate the chance a quote will be accepted, then let the user test changes like discounts or deductibles. Retail mirrors the retailer use case: find alternatives that are still relevant to intent, but better on a target dimension such as health. This is also where the reduced feature-engineering story becomes commercially interesting — teams can test business value much earlier.”</div>
+      </section>
+
+      <!-- 09 Business Takeaway -->
+      <section class="slide" data-screen-label="09 Business Takeaway">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">09 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm summarize <span class="flag">--takeaway</span> <span class="cursor"></span></div>
+          <h2 class="h2">FROM "WHAT HAPPENED?"<br />TO "WHAT SHOULD I DO?"</h2>
+          <div class="steps">
+            <div class="step"><span class="tag g">OPERATIONALIZE</span><span>most companies already have the data — make it usable at decision time</span></div>
+            <div class="step"><span class="tag a">REPEATABLE</span><span>any repeated decision with historical examples is a candidate</span></div>
+            <div class="step"><span class="tag g">LOWER BARRIER</span><span>teams do not need to build everything from zero to start</span></div>
+            <div class="step"><span class="tag g">BRIDGE</span><span>analytics becomes an interactive system that helps someone act</span></div>
+          </div>
+          <div class="meta-line"># instead of analytics ending in a dashboard, analytics helps someone act</div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“The opportunity is to make data usable at decision time. Any repeated decision with historical examples is a candidate: fraud, underwriting, pricing, quote acceptance, recommendations, anomaly review, contract review. Pretrained tabular models mean teams do not always need to build everything from zero to start exploring this capability.”</div>
+      </section>
+
+      <!-- 10 Closing -->
+      <section class="slide" data-screen-label="10 Closing">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">10 / 10</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-cover">
+          <div class="cmdline"><span class="p">$</span> ldm done <span class="flag">--not_overclaiming</span> <span class="cursor"></span></div>
+          <h1 class="take-title">NOT ONLY SMARTER MODELS.<br />BETTER DECISION WORKFLOWS.</h1>
+          <p class="take-line">A credible prototype of the interaction pattern — the score is a signal, not a final decision.</p>
+          <div class="tags-row">
+            <span class="tag g">CREDIBLE PROTOTYPE</span>
+            <span class="tag r">SIGNAL ≠ VERDICT</span>
+            <span class="tag a">HUMAN IN THE LOOP</span>
+          </div>
+          <div class="take-footer"><span class="ok-tag">[DONE]</span> status 0 — exit</div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>“What excites me about this space is that it gives analytics teams a path beyond static reporting. With historical structured data, interactive interfaces, and pretrained tabular models, we can build systems that do not just describe the business — they help guide decisions inside it. If the model can absorb more of the pattern-recognition work that usually requires heavy feature engineering, smaller teams can participate in this shift much faster. That is the real promise I see in the LDM idea: not only smarter models, but better decision workflows.”</div>
+      </section>
+
+      <!-- ============ /SLIDES ============ -->
+
+      <!-- CRT overlay: cybernetic grid + scanlines + vignette + flicker -->
+      <div class="deck-fx"></div>
+
+    </div>
+  </div>
+
+  <!-- Framework chrome — DO NOT EDIT below this line. -->
+  <nav class="deck-counter" role="navigation" aria-label="Deck navigation">
+    <button type="button" id="deck-prev" aria-label="Previous slide">‹</button>
+    <span class="deck-count"><span id="deck-cur">01</span> <span class="total">/ <span id="deck-total">01</span></span></span>
+    <button type="button" id="deck-next" aria-label="Next slide">›</button>
+  </nav>
+  <div class="deck-hint">← / → · space</div>
+
+  <script>
+    (function () {
+      var stage = document.getElementById('deck-stage');
+      var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+      var prev = document.getElementById('deck-prev');
+      var next = document.getElementById('deck-next');
+      var cur = document.getElementById('deck-cur');
+      var total = document.getElementById('deck-total');
+      var STORE = 'deck:idx:' + (location.pathname || '/');
+      var idx = 0;
+
+      // ---- scale-to-fit ---------------------------------------------------
+      // The stage is 1920×1080 and sits at .deck-shell's (0, 0) in normal
+      // block flow — the shell is intentionally NOT a grid/flex container,
+      // so the stage's natural top-left is (0, 0). We scale via transform
+      // with transform-origin:top-left, then translate by the remainder to
+      // center the scaled box in the viewport. This survives nested
+      // transforms (e.g. when the OD viewer wraps the iframe in its own
+      // scale wrapper at zoom != 100%).
+      function fit() {
+        var sw = window.innerWidth;
+        var sh = window.innerHeight;
+        var pad = 32;
+        var s = Math.min((sw - pad) / 1920, (sh - pad) / 1080);
+        if (!isFinite(s) || s <= 0) s = 1;
+        var tx = (sw - 1920 * s) / 2;
+        var ty = (sh - 1080 * s) / 2;
+        stage.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + s + ')';
+      }
+
+      // ---- navigation -----------------------------------------------------
+      function pad2(n) { return (n < 10 ? '0' : '') + n; }
+      function paint() {
+        slides.forEach(function (el, i) { el.classList.toggle('active', i === idx); });
+        if (cur) cur.textContent = pad2(idx + 1);
+        if (total) total.textContent = pad2(slides.length);
+        if (prev) prev.toggleAttribute('disabled', idx <= 0);
+        if (next) next.toggleAttribute('disabled', idx >= slides.length - 1);
+      }
+      function go(i) {
+        idx = Math.max(0, Math.min(slides.length - 1, i));
+        paint();
+        try { localStorage.setItem(STORE, String(idx)); } catch (_) {}
+      }
+      function onKey(e) {
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(idx + 1); }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(idx - 1); }
+        else if (e.key === 'Home') { e.preventDefault(); go(0); }
+        else if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+      }
+      // Capture phase + listen on both targets — inside the OD iframe,
+      // focus may be on window OR document; a single non-capture listener
+      // silently misses presses.
+      window.addEventListener('keydown', onKey, true);
+      document.addEventListener('keydown', onKey, true);
+      if (prev) prev.addEventListener('click', function () { go(idx - 1); });
+      if (next) next.addEventListener('click', function () { go(idx + 1); });
+
+      // Auto-focus body so arrow keys work without an initial click.
+      document.body.setAttribute('tabindex', '-1');
+      document.body.style.outline = 'none';
+      function focusDeck() { try { window.focus(); document.body.focus({ preventScroll: true }); } catch (_) {} }
+      document.addEventListener('mousedown', focusDeck);
+      window.addEventListener('load', focusDeck);
+
+      // Restore last position.
+      try {
+        var saved = parseInt(localStorage.getItem(STORE) || '0', 10);
+        if (!isNaN(saved) && saved >= 0 && saved < slides.length) idx = saved;
+      } catch (_) {}
+
+      window.addEventListener('resize', fit);
+      fit();
+      paint();
+      focusDeck();
+    })();
+  </script>
+
+  <script>
+    // Light / dark mode toggle — the switch lives in every terminal
+    // chrome bar (top-right of each slide). Persists to localStorage;
+    // flips the <html class="light"> override defined in the per-deck
+    // style block.
+    (function () {
+      var root = document.documentElement;
+      var btns = Array.prototype.slice.call(document.querySelectorAll('[data-theme-btn]'));
+      var KEY = 'deck:theme:' + (location.pathname || '/');
+      try {
+        if (localStorage.getItem(KEY) === 'light') root.classList.add('light');
+      } catch (_) {}
+      function sync() {
+        var label = root.classList.contains('light') ? '[ LIGHT ]' : '[ DARK ]';
+        btns.forEach(function (b) { b.textContent = label; });
+      }
+      btns.forEach(function (b) {
+        b.addEventListener('click', function () {
+          root.classList.toggle('light');
+          try { localStorage.setItem(KEY, root.classList.contains('light') ? 'light' : 'dark'); } catch (_) {}
+          sync();
+        });
+      });
+      sync();
+    })();
+  </script>
+</body>
+</html>
