@@ -4,13 +4,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LDM × TabFM — marimo demo deck</title>
+  <title>LDM × TabFM - marimo demo deck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     /* ===========================================================
-       Deck framework — DO NOT EDIT the rules in this <style> block.
+       Deck framework - DO NOT EDIT the rules in this <style> block.
        Edit only inside the second <style> block below (per-deck
        styles) and inside <section class="slide"> bodies.
 
@@ -24,7 +24,7 @@
            per page, by toggling every slide visible under @media print
        =========================================================== */
     :root {
-      /* SLOT: theme tokens — the only top-level CSS the agent edits.
+      /* SLOT: theme tokens - the only top-level CSS the agent edits.
          Add or override --bg / --fg / --accent / etc. here. */
       --bg: #0a0c10;
       --fg: #e8f0ec;
@@ -33,7 +33,7 @@
       --surface: #11151b;
       --shell: #050608;
 
-      /* CRT terminal palette — dark mode defaults */
+      /* CRT terminal palette - dark mode defaults */
       --green: #7ed3a4;
       --amber: #e8c07a;
       --red: #e5746d;
@@ -83,18 +83,18 @@
        order can't break it. The previous `.slide { display:none }` rule
        lost the cascade whenever a per-slide variant class (e.g.
        `.s-cold { display:grid }`) was declared after it on the same
-       element — every slide silently became visible at once. The
+       element - every slide silently became visible at once. The
        `!important` is a belt-and-suspenders against agent code that adds
        `!important` on variant classes too. */
     .slide:not(.active) { display: none !important; }
     /* The active default uses :where() so it has zero specificity. Per-slide
        variant classes like `.s-cold { display:grid }` or
        `.s-magazine { display:block }` can override the default flex layout
-       just by declaring `display` — no need for the variant to be more
+       just by declaring `display` - no need for the variant to be more
        specific. The hide rule above still wins for inactive slides. */
     :where(.slide.active) { display: flex; flex-direction: column; }
 
-    /* Chrome — counter + prev/next live outside the scaled stage so they
+    /* Chrome - counter + prev/next live outside the scaled stage so they
        don't shrink with it. Do not relocate them inside .deck-stage. */
     .deck-counter {
       position: fixed;
@@ -147,7 +147,7 @@
       pointer-events: none;
     }
 
-    /* Print / PDF stitching — every slide stacks top-to-bottom, one per
+    /* Print / PDF stitching - every slide stacks top-to-bottom, one per
        page. The viewer's "Share → PDF" relies on this; do not remove. */
     @media print {
       @page { size: 1920px 1080px; margin: 0; }
@@ -183,7 +183,7 @@
     }
   </style>
   <style>
-    /* SLOT: per-deck styles — typography, layout helpers, slide variants.
+    /* SLOT: per-deck styles - typography, layout helpers, slide variants.
        Add classes used by the slide content below, e.g. .title, .big-stat,
        .grid-3. Do not redefine .deck-shell / .deck-stage / .slide /
        .deck-counter / .deck-hint or anything inside @media print. */
@@ -513,14 +513,14 @@
         <div class="s-cover">
           <div class="cmdline"><span class="p">$</span> marimo <span class="flag">run</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="cursor"></span></div>
           <h1 class="cover-title">FROM DASHBOARDS<br />TO DECISION SUPPORT.</h1>
-          <p class="cover-sub">An LDM-style demo: historical business data + a pretrained tabular model + an interactive marimo notebook. Score a new case, compare with similar past cases, test what-if changes before deciding.</p>
+          <p class="cover-sub">An LDM-style demo: evaluate a current case against historical examples, compare it with similar past cases, and explore alternative scenarios before deciding.</p>
           <div class="tags-row">
             <span class="tag a">LDM-STYLE</span>
             <span class="tag g">TABFM</span>
             <span class="tag g">WHAT-IF</span>
           </div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“Most analytics teams today are very good at showing what already happened — dashboards, reports, summaries, trends. But those usually stop short of helping a user decide what to do in a live case. This demo recreates the pattern from the IBM LDM article: score a case, compare it to similar past cases, and test possible changes — using a pretrained tabular model called TabFM and an interactive marimo notebook.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Most analytics teams today are very good at showing what already happened - dashboards, reports, summaries, trends. But those usually stop short of helping a user decide what to do in a live case. This demo recreates the pattern from the IBM LDM article: score a case, compare it to similar past cases, and test possible changes - using a pretrained tabular model called TabFM and an interactive marimo notebook."</div>
       </section>
 
       <!-- 02 The Shift -->
@@ -546,7 +546,7 @@
               <div class="panel-text">&gt; what does this new case look like?</div>
               <div class="panel-text">&gt; how risky or promising is it?</div>
               <div class="panel-text">&gt; what similar cases have we seen before?</div>
-              <div class="panel-text">&gt; what if we change one or two decision variables?</div>
+              <div class="panel-text">&gt; what if we try a different input or scenario?</div>
             </div>
           </div>
           <div class="hist-wrap">
@@ -566,10 +566,10 @@
               <text class="lbl" x="1095" y="136">score →</text>
               <text class="lbl-mark" x="532" y="18">new case</text>
             </svg>
-            <div class="hist-label"># historical records set the context — the score marks where a new case lands</div>
+            <div class="hist-label"># historical records set the context - the score marks where a new case lands</div>
           </div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“Traditional analytics often answers: what happened, how many, where did performance change. LDM-style analytics aims to answer: what does this new case look like, how risky or promising is it, what similar cases have we seen, what if we change a decision variable. The opportunity is to move from retrospective reporting to interactive decision support.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Traditional analytics often answers: what happened, how many, where did performance change. LDM-style analytics aims to answer: what does this new case look like, how risky or promising is it, what similar cases have we seen, what if we try a different input or scenario. In insurance that might mean a different deductible or discount; in retail it might mean a healthier alternative; in fraud it might mean a different transaction pattern. The opportunity is to move from retrospective reporting to interactive decision support."</div>
       </section>
 
       <!-- 03 IBM LDM Idea -->
@@ -585,15 +585,15 @@
           <h2 class="h2">WHAT IBM'S LDM IDEA POINTS TOWARD.</h2>
           <div class="statement">Large database models (LDMs): systems that help users work directly with enterprise data in a smarter, more decision-oriented way.</div>
           <div class="steps">
-            <div class="step"><span class="tag g">01</span><span>use historical records as intelligence — not just storage</span></div>
-            <div class="step"><span class="tag g">02</span><span>support the decision in the moment — “what is the likely outcome right now?”</span></div>
-            <div class="step"><span class="tag g">03</span><span>enable what-if reasoning — change inputs, see the expected outcome change</span></div>
-            <div class="step"><span class="tag g">04</span><span>bring back similar prior cases — context for the current case</span></div>
-            <div class="step"><span class="tag a">05</span><span>move faster from idea to business value — operationalize historical data quicker</span></div>
+            <div class="step"><span class="tag g">01</span><span>use historical records as intelligence - not just storage</span></div>
+            <div class="step"><span class="tag g">02</span><span>support the decision in the moment - "what is the likely outcome right now?"</span></div>
+            <div class="step"><span class="tag g">03</span><span>enable what-if reasoning - change inputs, see the expected outcome change</span></div>
+            <div class="step"><span class="tag g">04</span><span>bring back similar prior cases - context for the current case</span></div>
+            <div class="step"><span class="tag a">05</span><span>move faster from idea to business value - operationalize historical data quicker</span></div>
           </div>
           <div class="meta-line"># a shift from dashboards that describe the past to systems that assist a decision in the present</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“What IBM is pointing toward is a shift from dashboards that describe the past to systems that actively assist a decision in the present. Key ideas: historical records as intelligence, decision-time support, what-if reasoning, similar-case retrieval, and speed from idea to business value.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"What IBM is pointing toward is a shift from dashboards that describe the past to systems that actively assist a decision in the present. Key ideas: historical records as intelligence, decision-time support, what-if reasoning, similar-case retrieval, and speed from idea to business value."</div>
       </section>
 
       <!-- 04 LDM-style mapping -->
@@ -617,15 +617,15 @@
               <div class="meta-line" style="margin-top: 18px;"># demonstrating the same business interaction pattern with tools we can access today</div>
             </div>
             <div class="steps">
-              <div class="step"><span class="tag g">01</span><span>fraud triage — score a new transaction, surface suspicious patterns</span></div>
-              <div class="step"><span class="tag g">02</span><span>what-if analysis — change attributes, instantly recalculate the signal</span></div>
-              <div class="step"><span class="tag g">03</span><span>similar historical cases — comparable prior examples, more context</span></div>
-              <div class="step"><span class="tag g">04</span><span>insurance quote optimization — estimate likelihood of acceptance</span></div>
-              <div class="step"><span class="tag g">05</span><span>retail alternatives — similar intent, better health profile</span></div>
+              <div class="step"><span class="tag g">01</span><span>fraud triage - score a new transaction, surface suspicious patterns</span></div>
+              <div class="step"><span class="tag g">02</span><span>what-if analysis - change attributes, instantly recalculate the signal</span></div>
+              <div class="step"><span class="tag g">03</span><span>similar historical cases - comparable prior examples, more context</span></div>
+              <div class="step"><span class="tag g">04</span><span>insurance quote optimization - estimate likelihood of acceptance</span></div>
+              <div class="step"><span class="tag g">05</span><span>retail alternatives - similar intent, better health profile</span></div>
             </div>
           </div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“Be precise: the notebook is not IBM’s product architecture. It demonstrates the same business interaction pattern with tools we can access today — a pretrained tabular model, interactive controls, and historical-case retrieval.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Be precise: the notebook is not IBM's product architecture. It demonstrates the same business interaction pattern with tools we can access today - a pretrained tabular model, interactive controls, and historical-case retrieval."</div>
       </section>
 
       <!-- 05 Why TabFM -->
@@ -643,20 +643,20 @@
             <pre class="code"><span class="c"># pretrained foundation model for tabular data</span>
 tabfm = <span class="v">load_tabfm</span>()        <span class="c"># ← illustrative</span>
 
-<span class="c"># rows, columns, attributes in …</span>
+<span class="c"># rows, columns, attributes in ...</span>
 signal = tabfm.<span class="v">score</span>(case)
 
-<span class="c"># … similar past cases back out</span>
+<span class="c"># ... similar past cases back out</span>
 similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span>)</pre>
             <div class="steps">
-              <div class="step"><span class="tag g">PRETRAINED</span><span>foundation model built for structured data — not text</span></div>
+              <div class="step"><span class="tag g">PRETRAINED</span><span>foundation model built for structured data - not text</span></div>
               <div class="step"><span class="tag a">LESS FROM SCRATCH</span><span>reduces manual model-building before value testing</span></div>
               <div class="step"><span class="tag g">CREDIBLE</span><span>foundation-model thinking beyond text</span></div>
               <div class="step"><span class="tag g">LOWER BARRIER</span><span>advanced analytics without deep ML infrastructure</span></div>
             </div>
           </div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is built for that kind of data. For teams where deep ML specialization is limited, pretrained tabular models lower the barrier to building decision-support systems.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is built for that kind of data. For teams where deep ML specialization is limited, pretrained tabular models lower the barrier to building decision-support systems."</div>
       </section>
 
       <!-- 06 Feature Engineering -->
@@ -686,10 +686,10 @@ similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span
               <div class="panel-text">&gt; prototype business value earlier</div>
             </div>
           </div>
-          <div class="meta-line"><span class="ok-tag">✓ reduced manual feature engineering</span> — not zero · the demo still adds a few simple derived fields: balance deltas, error measures</div>
+          <div class="meta-line"><span class="ok-tag">✓ reduced manual feature engineering</span> - not zero · the demo still adds a few simple derived fields: balance deltas, error measures</div>
           <div class="meta-line"># domain knowledge does not disappear · more intelligence comes from model + historical data</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“Traditionally, getting from database rows to a useful predictive workflow requires a lot of data-science work: choosing features, engineering transformations, training custom models, iterating many times. The LDM idea is attractive because it promises to reduce that custom effort significantly. The right claim is not ‘no data-science work is needed.’ The right claim is ‘the amount of custom work needed to reach a useful prototype can be much lower.’”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Traditionally, getting from database rows to a useful predictive workflow requires a lot of data-science work: choosing features, engineering transformations, training custom models, iterating many times. The LDM idea is attractive because it promises to reduce that custom effort significantly. The right claim is not 'no data-science work is needed.' The right claim is 'the amount of custom work needed to reach a useful prototype can be much lower.'"</div>
       </section>
 
       <!-- 07 Fraud Triage -->
@@ -718,7 +718,7 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
 03    331   0.68   0.85
 04    077   0.74   0.81
 05    502   0.66   0.76
-<span class="c"># sample rows — illustrative</span></pre>
+<span class="c"># sample rows - illustrative</span></pre>
           </div>
           <div class="tags-row">
             <span class="tag g">TRIAGE</span>
@@ -726,7 +726,7 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
             <span class="tag g">SIMILAR RETRIEVAL</span>
           </div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“This is where the concept becomes operational. A user can edit the current case directly and see how the signal changes. The score is a decision-support signal — higher means more similar to past fraud-like cases — not an automatic verdict. Similar-case retrieval makes the system easier to trust and use, because the analyst is not forced to treat the model as a black box.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"This is where the concept becomes operational. A user can edit the current case directly and see how the signal changes. The score is a decision-support signal - higher means more similar to past fraud-like cases - not an automatic verdict. Similar-case retrieval makes the system easier to trust and use, because the analyst is not forced to treat the model as a black box."</div>
       </section>
 
       <!-- 08 Extensions -->
@@ -755,7 +755,7 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
 <span class="v">2.</span> insurance quote opt   <span class="c">→ acceptance likelihood + what-if</span>
 <span class="v">3.</span> retail alternatives   <span class="c">→ similar intent + health objective</span></pre>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“Insurance mirrors one of the strongest examples in the IBM article: estimate the chance a quote will be accepted, then let the user test changes like discounts or deductibles. Retail mirrors the retailer use case: find alternatives that are still relevant to intent, but better on a target dimension such as health. This is also where the reduced feature-engineering story becomes commercially interesting — teams can test business value much earlier.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Insurance mirrors one of the strongest examples in the IBM article: estimate the chance a quote will be accepted, then let the user test changes like discounts or deductibles. Retail mirrors the retailer use case: find alternatives that are still relevant to intent, but better on a target dimension such as health. This is also where the reduced feature-engineering story becomes commercially interesting - teams can test business value much earlier."</div>
       </section>
 
       <!-- 09 Business Takeaway -->
@@ -770,14 +770,14 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
           <div class="cmdline"><span class="p">$</span> ldm summarize <span class="flag">--takeaway</span> <span class="cursor"></span></div>
           <h2 class="h2">FROM "WHAT HAPPENED?"<br />TO "WHAT SHOULD I DO?"</h2>
           <div class="steps">
-            <div class="step"><span class="tag g">OPERATIONALIZE</span><span>most companies already have the data — make it usable at decision time</span></div>
+            <div class="step"><span class="tag g">OPERATIONALIZE</span><span>most companies already have the data - make it usable at decision time</span></div>
             <div class="step"><span class="tag a">REPEATABLE</span><span>any repeated decision with historical examples is a candidate</span></div>
             <div class="step"><span class="tag g">LOWER BARRIER</span><span>teams do not need to build everything from zero to start</span></div>
             <div class="step"><span class="tag g">BRIDGE</span><span>analytics becomes an interactive system that helps someone act</span></div>
           </div>
           <div class="meta-line"># instead of analytics ending in a dashboard, analytics helps someone act</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“The opportunity is to make data usable at decision time. Any repeated decision with historical examples is a candidate: fraud, underwriting, pricing, quote acceptance, recommendations, anomaly review, contract review. Pretrained tabular models mean teams do not always need to build everything from zero to start exploring this capability.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"The opportunity is to make data usable at decision time. Any repeated decision with historical examples is a candidate: fraud, underwriting, pricing, quote acceptance, recommendations, anomaly review, contract review. Pretrained tabular models mean teams do not always need to build everything from zero to start exploring this capability."</div>
       </section>
 
       <!-- 10 Closing -->
@@ -791,15 +791,15 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
         <div class="s-cover">
           <div class="cmdline"><span class="p">$</span> ldm done <span class="flag">--not_overclaiming</span> <span class="cursor"></span></div>
           <h1 class="take-title">NOT ONLY SMARTER MODELS.<br />BETTER DECISION WORKFLOWS.</h1>
-          <p class="take-line">A credible prototype of the interaction pattern — the score is a signal, not a final decision.</p>
+          <p class="take-line">A credible prototype of the interaction pattern - the score is a signal, not a final decision.</p>
           <div class="tags-row">
             <span class="tag g">CREDIBLE PROTOTYPE</span>
             <span class="tag r">SIGNAL ≠ VERDICT</span>
             <span class="tag a">HUMAN IN THE LOOP</span>
           </div>
-          <div class="take-footer"><span class="ok-tag">[DONE]</span> status 0 — exit</div>
+          <div class="take-footer"><span class="ok-tag">[DONE]</span> status 0 - exit</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>“What excites me about this space is that it gives analytics teams a path beyond static reporting. With historical structured data, interactive interfaces, and pretrained tabular models, we can build systems that do not just describe the business — they help guide decisions inside it. If the model can absorb more of the pattern-recognition work that usually requires heavy feature engineering, smaller teams can participate in this shift much faster. That is the real promise I see in the LDM idea: not only smarter models, but better decision workflows.”</div>
+        <div class="notes"><span class="n-label">speaker note</span>"What excites me about this space is that it gives analytics teams a path beyond static reporting. With historical structured data, interactive interfaces, and pretrained tabular models, we can build systems that do not just describe the business - they help guide decisions inside it. If the model can absorb more of the pattern-recognition work that usually requires heavy feature engineering, smaller teams can participate in this shift much faster. That is the real promise I see in the LDM idea: not only smarter models, but better decision workflows."</div>
       </section>
 
       <!-- ============ /SLIDES ============ -->
@@ -810,7 +810,7 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
     </div>
   </div>
 
-  <!-- Framework chrome — DO NOT EDIT below this line. -->
+  <!-- Framework chrome - DO NOT EDIT below this line. -->
   <nav class="deck-counter" role="navigation" aria-label="Deck navigation">
     <button type="button" id="deck-prev" aria-label="Previous slide">‹</button>
     <span class="deck-count"><span id="deck-cur">01</span> <span class="total">/ <span id="deck-total">01</span></span></span>
@@ -831,7 +831,7 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
 
       // ---- scale-to-fit ---------------------------------------------------
       // The stage is 1920×1080 and sits at .deck-shell's (0, 0) in normal
-      // block flow — the shell is intentionally NOT a grid/flex container,
+      // block flow - the shell is intentionally NOT a grid/flex container,
       // so the stage's natural top-left is (0, 0). We scale via transform
       // with transform-origin:top-left, then translate by the remainder to
       // center the scaled box in the viewport. This survives nested
@@ -870,7 +870,7 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
         else if (e.key === 'Home') { e.preventDefault(); go(0); }
         else if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
       }
-      // Capture phase + listen on both targets — inside the OD iframe,
+      // Capture phase + listen on both targets - inside the OD iframe,
       // focus may be on window OR document; a single non-capture listener
       // silently misses presses.
       window.addEventListener('keydown', onKey, true);
@@ -899,7 +899,7 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
   </script>
 
   <script>
-    // Light / dark mode toggle — the switch lives in every terminal
+    // Light / dark mode toggle - the switch lives in every terminal
     // chrome bar (top-right of each slide). Persists to localStorage;
     // flips the <html class="light"> override defined in the per-deck
     // style block.
@@ -926,3 +926,4 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
   </script>
 </body>
 </html>
+
