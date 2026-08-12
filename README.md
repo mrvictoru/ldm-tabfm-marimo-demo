@@ -17,3 +17,7 @@ marimo edit ldm_tabfm_marimo_demo.py
 ## Molab notes
 
 Open `ldm_tabfm_marimo_demo.py` in molab or marimo, install the dependencies from `requirements.txt`, and run the notebook. The first run downloads the TabFM weights and samples a notebook-sized slice of the Cifer dataset from Hugging Face.
+
+## Presentation assets
+
+Open `index.html` in a browser to view the HTML intro slide. The speaker notes are in `speaker_notes.md`.
