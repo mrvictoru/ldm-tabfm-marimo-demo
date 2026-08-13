@@ -507,7 +507,7 @@
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">01 / 10</span>
+          <span class="label">01 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-cover">
@@ -528,7 +528,7 @@
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">02 / 10</span>
+          <span class="label">02 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -577,7 +577,7 @@
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">03 / 10</span>
+          <span class="label">03 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -601,7 +601,7 @@
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">04 / 10</span>
+          <span class="label">04 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -633,7 +633,7 @@
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">05 / 10</span>
+          <span class="label">05 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -659,12 +659,48 @@ similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span
         <div class="notes"><span class="n-label">speaker note</span>"A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is built for that kind of data. For teams where deep ML specialization is limited, pretrained tabular models lower the barrier to building decision-support systems."</div>
       </section>
 
-      <!-- 06 Feature Engineering -->
-      <section class="slide" data-screen-label="06 Feature Engineering">
+      <!-- 06 How TabFM Works -->
+      <section class="slide" data-screen-label="06 How TabFM Works">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">06 / 10</span>
+          <span class="label">06 / 11</span>
+          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
+        </div>
+        <div class="s-body">
+          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--tabfm --architecture</span> <span class="cursor"></span></div>
+          <h2 class="h2">HOW TABFM WORKS UNDER THE HOOD.</h2>
+          <div class="split">
+            <div class="panel">
+              <div class="panel-head"><span class="tag a">PRE-TRAINING</span></div>
+              <div class="panel-text">&gt; trained on diverse public tabular datasets</div>
+              <div class="panel-text">&gt; learns cross-column patterns &amp; value semantics</div>
+              <div class="panel-text">&gt; column names + values serialised as tokens</div>
+              <div class="panel-text">&gt; masked-cell prediction as the self-supervised task</div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><span class="tag g">INFERENCE</span></div>
+              <div class="panel-text">&gt; row encoded with column name + value pairs</div>
+              <div class="panel-text">&gt; transformer produces a contextual row embedding</div>
+              <div class="panel-text">&gt; embedding used for zero-shot scoring &amp; retrieval</div>
+              <div class="panel-text">&gt; no task-specific fine-tuning required</div>
+            </div>
+          </div>
+          <pre class="code"><span class="c"># zero-shot usage pattern</span>
+<span class="k">row</span> = {<span class="s">"amount"</span>: <span class="v">2400</span>, <span class="s">"frequency"</span>: <span class="v">12</span>, <span class="s">"country"</span>: <span class="s">"US"</span>}
+<span class="k">emb</span> = tabfm.<span class="v">encode</span>(row)   <span class="c"># column names matter - model reads semantics</span>
+score = tabfm.<span class="v">score</span>(emb)  <span class="c"># similarity to fraud-labelled historical rows</span></pre>
+          <div class="meta-line"># column names are part of the input signal · renaming "amt" → "amount" can shift the embedding</div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>"TabFM is a transformer pre-trained on hundreds of public tabular datasets. The key idea is that each row is serialised as a sequence of column-name/value token pairs, so the model learns both the statistical structure of tabular data and the semantic meaning of common column names. At inference time it encodes a new row into an embedding that can be compared directly against historical rows - no fine-tuning, no custom feature engineering for the scoring step. Column naming therefore matters: the model interprets 'amount' differently from 'amt', because it has seen 'amount' in financial contexts during pre-training."</div>
+      </section>
+
+      <!-- 07 Feature Engineering -->
+      <section class="slide" data-screen-label="07 Feature Engineering">
+        <div class="term-bar">
+          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
+          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
+          <span class="label">07 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -692,12 +728,12 @@ similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span
         <div class="notes"><span class="n-label">speaker note</span>"Traditionally, getting from database rows to a useful predictive workflow requires a lot of data-science work: choosing features, engineering transformations, training custom models, iterating many times. The LDM idea is attractive because it promises to reduce that custom effort significantly. The right claim is not 'no data-science work is needed.' The right claim is 'the amount of custom work needed to reach a useful prototype can be much lower.'"</div>
       </section>
 
-      <!-- 07 Fraud Triage -->
-      <section class="slide" data-screen-label="07 Fraud Triage">
+      <!-- 08 Fraud Triage -->
+      <section class="slide" data-screen-label="08 Fraud Triage">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">07 / 10</span>
+          <span class="label">08 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -729,12 +765,12 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
         <div class="notes"><span class="n-label">speaker note</span>"This is where the concept becomes operational. A user can edit the current case directly and see how the signal changes. The score is a decision-support signal - higher means more similar to past fraud-like cases - not an automatic verdict. Similar-case retrieval makes the system easier to trust and use, because the analyst is not forced to treat the model as a black box."</div>
       </section>
 
-      <!-- 08 Extensions -->
-      <section class="slide" data-screen-label="08 Extensions">
+      <!-- 09 Extensions -->
+      <section class="slide" data-screen-label="09 Extensions">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">08 / 10</span>
+          <span class="label">09 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -758,12 +794,12 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
         <div class="notes"><span class="n-label">speaker note</span>"Insurance mirrors one of the strongest examples in the IBM article: estimate the chance a quote will be accepted, then let the user test changes like discounts or deductibles. Retail mirrors the retailer use case: find alternatives that are still relevant to intent, but better on a target dimension such as health. This is also where the reduced feature-engineering story becomes commercially interesting - teams can test business value much earlier."</div>
       </section>
 
-      <!-- 09 Business Takeaway -->
-      <section class="slide" data-screen-label="09 Business Takeaway">
+      <!-- 10 Business Takeaway -->
+      <section class="slide" data-screen-label="10 Business Takeaway">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">09 / 10</span>
+          <span class="label">10 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -780,12 +816,12 @@ signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span>
         <div class="notes"><span class="n-label">speaker note</span>"The opportunity is to make data usable at decision time. Any repeated decision with historical examples is a candidate: fraud, underwriting, pricing, quote acceptance, recommendations, anomaly review, contract review. Pretrained tabular models mean teams do not always need to build everything from zero to start exploring this capability."</div>
       </section>
 
-      <!-- 10 Closing -->
-      <section class="slide" data-screen-label="10 Closing">
+      <!-- 11 Closing -->
+      <section class="slide" data-screen-label="11 Closing">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">10 / 10</span>
+          <span class="label">11 / 11</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-cover">
