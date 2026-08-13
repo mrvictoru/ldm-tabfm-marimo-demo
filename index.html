@@ -675,7 +675,7 @@ similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span
               <div class="panel-head"><span class="tag a">PRE-TRAINING</span></div>
               <div class="panel-text">&gt; trained on diverse public tabular datasets</div>
               <div class="panel-text">&gt; learns cross-column patterns &amp; value semantics</div>
-              <div class="panel-text">&gt; column names + values serialised as tokens</div>
+              <div class="panel-text">&gt; column names + values serialized as tokens</div>
               <div class="panel-text">&gt; masked-cell prediction as the self-supervised task</div>
             </div>
             <div class="panel">
@@ -692,7 +692,7 @@ similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span
 score = tabfm.<span class="v">score</span>(emb)  <span class="c"># similarity to fraud-labelled historical rows</span></pre>
           <div class="meta-line"># column names are part of the input signal · renaming "amt" → "amount" can shift the embedding</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"TabFM is a transformer pre-trained on hundreds of public tabular datasets. The key idea is that each row is serialised as a sequence of column-name/value token pairs, so the model learns both the statistical structure of tabular data and the semantic meaning of common column names. At inference time it encodes a new row into an embedding that can be compared directly against historical rows - no fine-tuning, no custom feature engineering for the scoring step. Column naming therefore matters: the model interprets 'amount' differently from 'amt', because it has seen 'amount' in financial contexts during pre-training."</div>
+        <div class="notes"><span class="n-label">speaker note</span>"TabFM is a transformer pre-trained on hundreds of public tabular datasets. The key idea is that each row is serialized as a sequence of column-name/value token pairs, so the model learns both the statistical structure of tabular data and the semantic meaning of common column names. At inference time it encodes a new row into an embedding that can be compared directly against historical rows - no fine-tuning, no custom feature engineering for the scoring step. Column naming therefore matters: the model interprets 'amount' differently from 'amt', because it has seen 'amount' in financial contexts during pre-training."</div>
       </section>
 
       <!-- 07 Feature Engineering -->
