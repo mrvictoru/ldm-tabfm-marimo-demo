@@ -144,32 +144,50 @@ The best presentation line is:
 
 ---
 
-## 6. What business people should take away
+## 6. How to close the deck
 
-This is the part to emphasize for analytics professionals.
+The last slide should feel like a **technical summary**, not a product pitch.
 
-The message is:
+The main point to land is:
 
-### Traditional analytics often answers:
-- What happened?
-- How many?
-- Where did performance change?
+### An LDM-style system turns structured historical data into an interactive workflow
 
-### LDM-style analytics aims to answer:
-- What does this new case look like?
-- How risky or promising is it?
-- What similar cases have we seen before?
-- What if we try a different input or scenario?
+Instead of ending with a dashboard or a static prediction, the system can:
 
-That is a major shift.
+1. take a **live business case** as input,
+2. compare it against **historical rows**,
+3. produce a **score or signal**,
+4. retrieve **similar prior cases** for context,
+5. and let the user run **what-if edits** before acting.
 
-Say:
+That is the mechanism.
 
-> "The opportunity here is to move from retrospective reporting to interactive decision support."
+For this audience, say it plainly:
 
-And:
+> "The interesting part is not just that a model gives a score. The interesting part is that historical data becomes operational context. A user can bring a new case, compare it with similar past records, test changes, and make a better-informed decision in the same workflow."
 
-> "This is especially attractive for data analytics teams because it builds on assets they already have: structured data, domain knowledge, and recurring business decisions."
+That maps well to the IBM article and the IBM video because both emphasize:
+
+- structured rows and columns as the core data asset,
+- similarity and retrieval over historical records,
+- live scoring of a current case,
+- and scenario exploration before action.
+
+### How to explain our specific demo honestly
+
+Be explicit that our prototype is built from three parts:
+
+1. **TabFM** for tabular pattern recognition and scoring,
+2. a **helper retrieval layer** for similar-case lookup,
+3. **marimo** for the interactive what-if interface.
+
+Suggested wording:
+
+> "In this demo, TabFM handles the tabular scoring, a retrieval layer brings back comparable historical cases, and marimo provides the interface for interactive scenario testing."
+
+Then add the business interpretation:
+
+> "That combination is what makes the workflow useful. The analyst is not staring at an unexplained score. They can inspect comparable cases and test changes before deciding."
 
 ---
 
@@ -177,17 +195,25 @@ And:
 
 Your audience is in data analytics, but may not have deep machine-learning experience. So the tone should be:
 
-- ambitious,
-- practical,
-- and slightly forward-looking.
+- technical enough to feel credible,
+- practical enough to feel achievable,
+- and honest about what is automated versus what is still engineered.
 
-Avoid sounding like you are teaching a programming class.
+Avoid sounding like you are selling a platform.
 
-Instead, sound like you are showing a new capability direction for analytics teams.
+Avoid phrases that overclaim, such as:
 
-Good framing:
+- "this changes everything,"
+- "fully replaces data scientists,"
+- or "no feature engineering is needed."
 
-> "You do not need to be a large, elite AI lab to start experimenting with this pattern. If you already have structured historical data and a recurring business decision, you can begin prototyping something valuable."
+Better framing:
+
+> "This is a credible prototype of a new analytics workflow. It shows how a pretrained tabular model, historical record retrieval, and an interactive UI can be combined to support live decisions."
+
+And:
+
+> "The value is not magic automation. The value is that more of the pattern-recognition work can come from the model plus historical data, so teams can prototype decision-support workflows faster."
 
 ---
 
@@ -470,4 +496,3 @@ The promise is "less manual feature engineering and less bespoke model work befo
 
 ### Strategic message
 Smaller or less ML-mature markets can still begin building advanced decision-support experiences by combining domain data, interactive tooling, and pretrained tabular models.
-
