@@ -507,7 +507,7 @@
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">01 / 08</span>
+          <span class="label">01 / 07</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-cover">
@@ -523,30 +523,32 @@
         <div class="notes"><span class="n-label">speaker note</span>"Most analytics teams today are very good at showing what already happened - dashboards, reports, summaries, trends. But those usually stop short of helping a user decide what to do in a live case. This demo recreates the pattern from the IBM LDM article: score a case, compare it to similar past cases, and test possible changes - using a pretrained tabular model called TabFM and an interactive marimo notebook."</div>
       </section>
 
-      <!-- 02 The Shift -->
-      <section class="slide" data-screen-label="02 The Shift">
+      <!-- 02 IBM LDM Idea -->
+      <section class="slide" data-screen-label="02 IBM LDM Idea">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">02 / 08</span>
+          <span class="label">02 / 07</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--pattern decision_support</span> <span class="cursor"></span></div>
+          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--concept large_database_models</span> <span class="cursor"></span></div>
           <h2 class="h2">REPORT THE PAST.<br />OR ASSIST THE DECISION.</h2>
+          <div class="statement">IBM's LDM idea: systems that help users work directly with enterprise data in a smarter, more decision-oriented way.</div>
           <div class="split">
             <div class="panel">
               <div class="panel-head"><span class="tag a">RETROSPECTIVE</span> TRADITIONAL ANALYTICS</div>
               <div class="panel-text">&gt; what happened?</div>
               <div class="panel-text">&gt; how many?</div>
               <div class="panel-text">&gt; where did performance change?</div>
+              <div class="panel-text">&gt; output: a dashboard</div>
             </div>
             <div class="panel">
               <div class="panel-head"><span class="tag g">DECISION-TIME</span> LDM-STYLE ANALYTICS</div>
               <div class="panel-text">&gt; what does this new case look like?</div>
               <div class="panel-text">&gt; how risky or promising is it?</div>
               <div class="panel-text">&gt; what similar cases have we seen before?</div>
-              <div class="panel-text">&gt; what if we try a different input or scenario?</div>
+              <div class="panel-text">&gt; what if we change this input or scenario?</div>
             </div>
           </div>
           <div class="hist-wrap">
@@ -568,49 +570,17 @@
             </svg>
             <div class="hist-label"># historical records set the context - the score marks where a new case lands</div>
           </div>
-        </div>
-        <div class="notes"><span class="n-label">speaker note</span>"Traditional analytics often answers: what happened, how many, where did performance change. LDM-style analytics aims to answer: what does this new case look like, how risky or promising is it, what similar cases have we seen, what if we try a different input or scenario. In insurance that might mean a different deductible or discount; in retail it might mean a healthier alternative; in fraud it might mean a different transaction pattern. The opportunity is to move from retrospective reporting to interactive decision support."</div>
-      </section>
-
-      <!-- 03 IBM LDM Idea -->
-      <section class="slide" data-screen-label="03 IBM LDM Idea">
-        <div class="term-bar">
-          <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
-          <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">03 / 08</span>
-          <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
-        </div>
-        <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--concept large_database_models</span> <span class="cursor"></span></div>
-          <h2 class="h2">FROM REPORTING THE PAST<br />TO ASSISTING THE DECISION.</h2>
-          <div class="statement">IBM's LDM idea: systems that help users work directly with enterprise data in a smarter, more decision-oriented way.</div>
-          <div class="split">
-            <div class="panel">
-              <div class="panel-head"><span class="tag a">TRADITIONAL ANALYTICS</span></div>
-              <div class="panel-text">&gt; what happened?</div>
-              <div class="panel-text">&gt; how many?</div>
-              <div class="panel-text">&gt; where did performance change?</div>
-              <div class="panel-text">&gt; output: a dashboard</div>
-            </div>
-            <div class="panel">
-              <div class="panel-head"><span class="tag g">LDM-STYLE ANALYTICS</span></div>
-              <div class="panel-text">&gt; how risky or promising is this new case?</div>
-              <div class="panel-text">&gt; what similar cases have we seen before?</div>
-              <div class="panel-text">&gt; what if we change this input or scenario?</div>
-              <div class="panel-text">&gt; output: a decision-support tool</div>
-            </div>
-          </div>
           <div class="meta-line"># historical records become intelligence · the model answers questions at decision time · not just at reporting time</div>
         </div>
         <div class="notes"><span class="n-label">speaker note</span>"IBM's Large Database Models idea is a shift from dashboards that describe the past to systems that actively assist a decision in the present. Traditional analytics answers: what happened, how many, where did performance change. LDM-style analytics answers in the moment: how risky or promising is this new case, what similar cases have we seen, what if we try a different input. The key reframe is that historical records are not just storage - they are intelligence the system can surface at decision time. In fraud that might mean flagging a suspicious pattern; in insurance a different deductible; in retail a healthier alternative."</div>
       </section>
 
-      <!-- 04 LDM-style Mapping -->
-      <section class="slide" data-screen-label="04 LDM-style Mapping">
+      <!-- 03 LDM-style Mapping -->
+      <section class="slide" data-screen-label="03 LDM-style Mapping">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">04 / 08</span>
+          <span class="label">03 / 07</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -637,43 +607,47 @@
         <div class="notes"><span class="n-label">speaker note</span>"Be precise: the notebook is not IBM's product architecture. It demonstrates the same business interaction pattern with tools we can access today - a pretrained tabular model, interactive controls, and historical-case retrieval."</div>
       </section>
 
-      <!-- 05 Why TabFM -->
-      <section class="slide" data-screen-label="05 Why TabFM">
+     <!-- 04 Why TabFM -->
+     <section class="slide" data-screen-label="04 Why TabFM">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">05 / 08</span>
+         <span class="label">04 / 07</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
           <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--model tabfm</span> <span class="cursor"></span></div>
           <h2 class="h2">ROWS, COLUMNS, ATTRIBUTES.<br />NOT ESSAYS.</h2>
           <div class="split">
-            <pre class="code"><span class="c"># pretrained foundation model for tabular data</span>
-tabfm = <span class="v">load_tabfm</span>()        <span class="c"># ← illustrative</span>
+           <pre class="code"><span class="c"># train a TabFM classifier from historical transaction rows</span>
+tabfm_model = tabfm_v1_0_0.load(model_type=<span class="s">"classification"</span>)
+classifier = <span class="v">TabFMClassifier</span>(model=tabfm_model)
+classifier.fit(X_context, y_context.to_numpy())
+ 
+<span class="c"># score a hold-out row and keep the positive-class probability</span>
+test_probabilities = classifier.predict_proba(X_test)
+fraud_scores = pd.Series(
+    test_probabilities[:, positive_index],
+    index=X_test.index,
+    name=<span class="s">"tabfm_fraud_probability"</span>,
+)</pre>
+           <div class="steps">
+             <div class="step"><span class="tag g">PRETRAINED</span><span>foundation model built for structured data - not text</span></div>
+             <div class="step"><span class="tag a">LESS FROM SCRATCH</span><span>reduces manual model-building before value testing</span></div>
+             <div class="step"><span class="tag g">CREDIBLE</span><span>foundation-model thinking beyond text</span></div>
+             <div class="step"><span class="tag g">LOWER BARRIER</span><span>advanced analytics without deep ML infrastructure</span></div>
+           </div>
+         </div>
+       </div>
+       <div class="notes"><span class="n-label">speaker note</span>"A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is built for that kind of data. In the notebook, the model is loaded from the public TabFM checkpoint and fit on a small historical context set before it is asked to score new transactions."</div>
+     </section>
 
-<span class="c"># rows, columns, attributes in ...</span>
-signal = tabfm.<span class="v">score</span>(case)
-
-<span class="c"># ... similar past cases back out</span>
-similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span>)</pre>
-            <div class="steps">
-              <div class="step"><span class="tag g">PRETRAINED</span><span>foundation model built for structured data - not text</span></div>
-              <div class="step"><span class="tag a">LESS FROM SCRATCH</span><span>reduces manual model-building before value testing</span></div>
-              <div class="step"><span class="tag g">CREDIBLE</span><span>foundation-model thinking beyond text</span></div>
-              <div class="step"><span class="tag g">LOWER BARRIER</span><span>advanced analytics without deep ML infrastructure</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="notes"><span class="n-label">speaker note</span>"A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is built for that kind of data. For teams where deep ML specialization is limited, pretrained tabular models lower the barrier to building decision-support systems."</div>
-      </section>
-
-      <!-- 06 Feature Engineering -->
-      <section class="slide" data-screen-label="06 Feature Engineering">
+      <!-- 05 Feature Engineering -->
+      <section class="slide" data-screen-label="05 Feature Engineering">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">06 / 08</span>
+          <span class="label">05 / 07</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
@@ -701,50 +675,58 @@ similar = tabfm.<span class="v">neighbors</span>(case, <span class="s">k=5</span
         <div class="notes"><span class="n-label">speaker note</span>"Traditionally, getting from database rows to a useful predictive workflow requires a lot of data-science work: choosing features, engineering transformations, training custom models, iterating many times. The LDM idea is attractive because it promises to reduce that custom effort significantly. The right claim is not 'no data-science work is needed.' The right claim is 'the amount of custom work needed to reach a useful prototype can be much lower.'"</div>
       </section>
 
-      <!-- 07 Fraud Triage -->
-      <section class="slide" data-screen-label="07 Fraud Triage">
+     <!-- 06 Fraud Triage -->
+     <section class="slide" data-screen-label="06 Fraud Triage">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">07 / 08</span>
+         <span class="label">06 / 07</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
           <div class="cmdline"><span class="p">$</span> marimo <span class="flag">run</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="flag">--case fraud_triage --trace</span> <span class="cursor"></span></div>
           <h2 class="h2">SCORE A NEW CASE.<br />SHOW WHY. LET THEM TEST.</h2>
           <div class="split">
-            <pre class="code"><span class="c"># fraud triage · score a new case</span>
-<span class="k">case</span> = <span class="v">dict</span>(<span class="s">amount=2400</span>, <span class="s">frequency=12</span>)
-signal = <span class="v">score</span>(case)    <span class="c"># 0.71 · </span><span class="warn-tag">[WARN]</span>
-
-<span class="c"># adjust inputs and see the signal change</span>
-<span class="k">case</span>[<span class="s">"amount"</span>] = <span class="v">1500</span>
-<span class="k">case</span>[<span class="s">"frequency"</span>] = <span class="v">4</span>
-signal = <span class="v">score</span>(case)    <span class="c"># 0.38 · </span><span class="ok-tag">[OK]</span></pre>
-            <pre class="code"><span class="c"># similar historical cases retrieved</span>
-<span class="hdr">rank  case  score  sim</span>
-01    204   0.70   0.93
-02    118   0.73   0.88
-03    331   0.68   0.85
-04    077   0.74   0.81
-05    502   0.66   0.76
-<span class="c"># illustrative sample rows</span></pre>
+           <pre class="code"><span class="c"># build a candidate transaction from the interactive controls</span>
+candidate_frame = build_candidate_row(
+    step=step_value.value,
+    txn_type=transaction_type.value,
+    amount=amount_value.value,
+    oldbalance_org=oldbalance_org_value.value,
+    oldbalance_dest=oldbalance_dest_value.value,
+    origin_updates_normally=origin_updates_normally.value,
+    dest_updates_normally=dest_updates_normally.value,
+)
+ 
+<span class="c"># score the new row using the trained TabFM classifier</span>
+candidate_features = candidate_frame[feature_columns]
+candidate_probability = float(
+    classifier.predict_proba(candidate_features)[0][positive_index]
+)</pre>
+           <pre class="code"><span class="c"># find the closest historical rows to compare with the new case</span>
+candidate_similarity = similarity_preprocessor.transform(candidate_features)
+_, neighbor_positions = similarity_index.kneighbors(candidate_similarity)
+similar_cases = modeling_df.iloc[neighbor_positions[0]].copy()
+similar_cases[<span class="s">"tabfm_demo_distance_rank"</span>] = range(1, len(similar_cases) + 1)
+ 
+<span class="c"># example result summary</span>
+current_flag = int(candidate_frame.loc[0, <span class="s">"isFlaggedFraud"</span>])</pre>
           </div>
-          <div class="tags-row">
-            <span class="tag g">TRIAGE</span>
-            <span class="tag a">WHAT-IF</span>
-            <span class="tag g">SIMILAR RETRIEVAL</span>
-          </div>
-        </div>
-        <div class="notes"><span class="n-label">speaker note</span>"This is where the concept becomes operational. A user can edit the current case directly and see how the signal changes. The score is a decision-support signal - higher means more similar to past fraud-like cases - not an automatic verdict. Similar-case retrieval makes the system easier to trust and use, because the analyst is not forced to treat the model as a black box."</div>
-      </section>
+         <div class="tags-row">
+           <span class="tag g">TRIAGE</span>
+           <span class="tag a">WHAT-IF</span>
+           <span class="tag g">SIMILAR RETRIEVAL</span>
+         </div>
+       </div>
+       <div class="notes"><span class="n-label">speaker note</span>"This is where the concept becomes operational. The notebook takes the edited values from the marimo controls, builds a new transaction row, scores it with TabFM, and then retrieves the closest historical examples. That makes the result easier to trust, because the user is not seeing a score in isolation - they can compare it against similar past cases and adjust the inputs in real time."</div>
+     </section>
 
-      <!-- 08 Technical Summary -->
-      <section class="slide" data-screen-label="08 Technical Summary">
+      <!-- 07 Technical Summary -->
+      <section class="slide" data-screen-label="07 Technical Summary">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
-          <span class="label">08 / 08</span>
+          <span class="label">07 / 07</span>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
