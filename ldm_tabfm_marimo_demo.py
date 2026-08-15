@@ -297,6 +297,15 @@ def _(load_cifer_sample):
 
 
 @app.cell
+def _(modeling_df):
+    print("Loaded dataframe columns:")
+    print(modeling_df.columns.tolist())
+    print("\nTop 5 rows:")
+    print(modeling_df.head(5).to_string(index=False))
+    return
+
+
+@app.cell
 def _():
     return
 
