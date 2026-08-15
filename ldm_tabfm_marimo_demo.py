@@ -297,6 +297,15 @@ def _(load_cifer_sample):
 
 
 @app.cell
+def _(modeling_df):
+    print("Loaded dataframe columns:")
+    print(modeling_df.columns.tolist())
+    print("\nTop 5 rows:")
+    print(modeling_df.head(5).to_string(index=False))
+    return
+
+
+@app.cell
 def _():
     return
 
@@ -372,7 +381,12 @@ def _(mo):
     mo.md("""
     ### Step 6: Train the fraud-risk model and test it on held-out data
 
-    This is the key machine-learning step. The notebook uses a small set of historical cases as context and asks the TabFM model to estimate the fraud probability for new examples.
+    This is the key machine-learning step. The notebook builds a **stratified, class-ratio-aware** set of historical cases as context and asks the TabFM model to estimate the fraud probability for new examples.
+
+    Key improvements over a naïve random sample:
+    - **Larger context** (up to 150 per class instead of 50) gives the model more signal.
+    - **Stratified by transaction type** so TRANSFER / CASH_OUT fraud patterns are represented.
+    - **Class ratio matches real data** (~11% fraud) instead of an artificial 50/50 split that over-predicted fraud.
     """)
     return
 
@@ -387,14 +401,51 @@ def _(TabFMClassifier, X, pd, tabfm_v1_0_0, train_test_split, y):
         random_state=42,
     )
 
-    context_per_class = min(50, y_train.value_counts().min())
-    context_index = []
-    for class_value in sorted(y_train.unique()):
-        class_rows = y_train[y_train == class_value].sample(
-            n=context_per_class,
-            random_state=42,
-        )
-        context_index.extend(class_rows.index.tolist())
+    # Build a richer, stratified context that reflects real fraud patterns.
+    # TabFM is an in-context learner: more diverse, representative context rows
+    # give it a stronger signal.
+    #
+    # Strategy:
+    #   - Use up to 150 rows per class (vs the previous cap of 50) so the model
+    #     sees more variety.
+    #   - Stratify by transaction type within each class so TRANSFER / CASH_OUT
+    #     fraud patterns are represented, not just randomly sampled rows.
+    #   - Weight fraud vs. normal rows to reflect the real ~11% fraud rate in the
+    #     dataset instead of an artificial 50/50 split, which biased the model
+    #     toward over-predicting fraud.
+
+    fraud_rate_in_train = float(y_train.mean())
+    context_fraud_rows = min(150, int(y_train.sum()))
+    context_normal_rows = min(
+        int(context_fraud_rows * (1.0 - fraud_rate_in_train) / fraud_rate_in_train),
+        int((y_train == 0).sum()),
+    )
+
+    def _stratified_sample(mask, n, rng=42):
+        """Sample n rows from X_train[mask], stratified by transaction type."""
+        pool = X_train[mask].copy()
+        pool["_y"] = y_train[mask]
+        types = pool["type"].unique()
+        per_type = max(1, n // len(types))
+        parts = []
+        for t in types:
+            t_pool = pool[pool["type"] == t]
+            take = min(per_type, len(t_pool))
+            parts.append(t_pool.sample(n=take, random_state=rng))
+        combined = pd.concat(parts)
+        # top up / trim to exactly n
+        if len(combined) < n:
+            remaining = pool.drop(index=combined.index, errors="ignore")
+            extra = min(n - len(combined), len(remaining))
+            if extra > 0:
+                combined = pd.concat(
+                    [combined, remaining.sample(n=extra, random_state=rng)]
+                )
+        combined = combined.sample(n=min(n, len(combined)), random_state=rng)
+        return combined.drop(columns=["_y"]).index.tolist()
+
+    context_index = _stratified_sample(y_train == 1, context_fraud_rows)
+    context_index += _stratified_sample(y_train == 0, context_normal_rows)
 
     X_context = X_train.loc[context_index].sample(frac=1.0, random_state=42)
     y_context = y_train.loc[X_context.index]
@@ -524,7 +575,13 @@ def _(mo):
 
 @app.cell
 def _(X, mo, modeling_df):
-    safe_seed = modeling_df.loc[modeling_df["isFraud"] == 0].iloc[0]
+    # Seed controls from a median-representative non-fraud row rather than
+    # the arbitrary first row, so the default what-if case is more typical.
+    normal_rows = modeling_df.loc[modeling_df["isFraud"] == 0]
+    numeric_seed_cols = ["amount", "oldbalanceOrg", "oldbalanceDest"]
+    medians = normal_rows[numeric_seed_cols].median()
+    diffs = (normal_rows[numeric_seed_cols] - medians).abs().sum(axis=1)
+    safe_seed = normal_rows.loc[diffs.idxmin()]
     amount_cap = float(X["amount"].quantile(0.995))
     origin_cap = float(X["oldbalanceOrg"].quantile(0.995))
     dest_cap = float(X["oldbalanceDest"].quantile(0.995))
