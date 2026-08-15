@@ -111,53 +111,6 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Presenter guide for a non-technical audience
-
-    If your audience knows little about Python, notebooks, or machine learning, keep the story simple:
-
-    - This notebook is a demo of a decision-support experience.
-    - It helps a person review a new case by giving a score, showing similar past cases, and letting them test small changes.
-    - The point is not the code. The point is the workflow.
-
-    A simple way to explain it is:
-
-    "We are showing how a system can look at past examples, give a useful signal for a new case, and help a person compare it with similar situations."
-
-    ### What each major section is doing
-
-    - **Step 1: Load the notebook tools**  
-      Say: "This is just setup. We are loading the pieces the demo needs, like opening a toolbox."
-
-    - **Step 2: Load a sample of transaction data**  
-      Say: "We are bringing in a small set of past transaction examples to use as context."
-
-    - **Step 3: Create the working dataset**  
-      Say: "We prepare the data in a simple format so it can be compared and scored."
-
-    - **Step 4: Train and test the model**  
-      Say: "We teach the model from historical examples and then check whether it behaves sensibly."
-
-    - **Step 5: Build the interactive review experience**  
-      Say: "This is where the demo becomes interactive. You can change a few values and see the result update immediately."
-
-    - **Step 6: Show the score and similar cases**  
-      Say: "Now we can review a new case and compare it with similar past cases."
-
-    - **Extensions: Insurance and retail**  
-      Say: "The same pattern can be reused in other industries. We simply swap the story and the data."
-
-    ### Helpful plain-English phrases
-
-    - "This is a pattern-finder that learns from the past."
-    - "The score is not a final decision; it is a signal to help a person investigate."
-    - "Similar cases are there to help the person compare and reason, not to replace judgment."
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
     ### Step 2: Load a sample of transaction data
 
     This section downloads a manageable sample of fraud data from a public Hugging Face dataset. The notebook keeps the number of rows small so the demo stays fast and easy to use in molab.
@@ -197,7 +150,16 @@ def _(functools, np, pd):
         "dest_balance_error",
     ]
 
+    # Adds derived balance/hour features
+    """Derive extra columns that help explain a transaction's risk.
+
+    Computes the hour-of-day, the balance change on each side, and
+    "balance error" terms that measure how far the recorded balances are
+    from what a normal transaction of this amount would produce.
+    Large balance errors are a common red flag in fraud analysis.
+    """
     def _enrich_transactions(frame: pd.DataFrame) -> pd.DataFrame:
+
         enriched = frame.copy()
         enriched["hour_of_day"] = enriched["step"] % 24
         enriched["origin_delta"] = (
@@ -215,6 +177,14 @@ def _(functools, np, pd):
         enriched["log_amount"] = np.log1p(enriched["amount"])
         return enriched
 
+    # Streams a balanced sample from the Cifer CSV
+    """Stream the remote Cifer CSV and return a balanced, interactive sample.
+
+    Reads the file in chunks (to keep memory small), sampling fraud and
+    non-fraud rows separately until the requested counts are reached, then
+    shuffles and enriches the result. Cached so the heavy download only
+    happens once per session.
+    """
     @functools.lru_cache(maxsize=1)
     def load_cifer_sample(
         normal_rows: int = 2400,
@@ -222,6 +192,7 @@ def _(functools, np, pd):
         chunk_size: int = 150_000,
         random_state: int = 42,
     ) -> pd.DataFrame:
+
         positives = []
         negatives = []
         positive_count = 0
@@ -264,6 +235,14 @@ def _(functools, np, pd):
         ).reset_index(drop=True)
         return _enrich_transactions(sampled_frame)
 
+    # Builds a what-if transaction row
+    """Construct a one-row transaction from the what-if UI inputs.
+
+    Recomputes the expected post-transaction balances from the edited
+    amount. If "updates normally" is off for a side, it deliberately keeps
+    the old balance, creating a mismatch that the model can flag as
+    suspicious. Returns the enriched row ready for scoring.
+    """
     def build_candidate_row(
         *,
         step: float,
@@ -274,6 +253,7 @@ def _(functools, np, pd):
         origin_updates_normally: bool,
         dest_updates_normally: bool,
     ) -> pd.DataFrame:
+
         expected_origin = max(oldbalance_org - amount, 0.0)
         expected_dest = oldbalance_dest + amount
         newbalance_orig = expected_origin if origin_updates_normally else oldbalance_org
@@ -314,6 +294,11 @@ def _(mo):
 def _(load_cifer_sample):
     modeling_df = load_cifer_sample()
     return (modeling_df,)
+
+
+@app.cell
+def _():
+    return
 
 
 @app.cell(hide_code=True)
@@ -853,17 +838,9 @@ def _(mo):
     return
 
 
-@app.cell
-def _(
-    ColumnTransformer,
-    NearestNeighbors,
-    OneHotEncoder,
-    StandardScaler,
-    TabFMClassifier,
-    pd,
-    tabfm_v1_0_0,
-    train_test_split,
-):
+app._unparsable_cell(
+    """
+    # In context learning for TabFM + returns eval pieces
     def fit_tabfm_binary(
         X: pd.DataFrame,
         y: pd.Series,
@@ -871,6 +848,14 @@ def _(
         random_state: int = 42,
         context_cap: int = 50,
     ):
+    \"\"\"Train a TabFM classifier and return everything needed for scoring.
+
+    Splits the data into train/test, samples a balanced set of per-class
+    \"context\" rows (the few examples TabFM conditions on), fits the
+    classifier, and scores the holdout set. Returns the fitted model,
+    the positive-class index, the context rows/labels, and test scores
+    so callers can report AUC / average precision.
+    \"\"\"
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
@@ -892,7 +877,7 @@ def _(
         y_context = y_train.loc[X_context.index]
 
         classifier = TabFMClassifier(
-            model=tabfm_v1_0_0.load(model_type="classification")
+            model=tabfm_v1_0_0.load(model_type=\"classification\")
         )
         classifier.fit(X_context, y_context.to_numpy())
         positive_index = list(classifier.classes_).index(1)
@@ -900,10 +885,11 @@ def _(
         test_scores = pd.Series(
             test_probabilities,
             index=X_test.index,
-            name="tabfm_probability",
+            name=\"tabfm_probability\",
         )
         return classifier, positive_index, X_context, y_context, X_test, y_test, test_scores
 
+    # Builds preprocessor + NN index
     def build_similarity_tools(
         frame: pd.DataFrame,
         categorical_columns: list[str],
@@ -911,22 +897,29 @@ def _(
         *,
         n_neighbors: int = 8,
     ):
+    \"\"\"Build the preprocessing pipeline and nearest-neighbor index.
+
+    Scales numeric columns and one-hot encodes categorical columns into a
+    single feature matrix, then fits a NearestNeighbors index over it.
+    Used to retrieve the closest historical rows for any new case.
+    \"\"\"
         preprocessor = ColumnTransformer(
             transformers=[
-                ("numeric", StandardScaler(), numeric_columns),
+                (\"numeric\", StandardScaler(), numeric_columns),
                 (
-                    "categorical",
-                    OneHotEncoder(handle_unknown="ignore", sparse_output=False),
+                    \"categorical\",
+                    OneHotEncoder(handle_unknown=\"ignore\", sparse_output=False),
                     categorical_columns,
                 ),
             ]
         )
         matrix = preprocessor.fit_transform(frame)
-        index = NearestNeighbors(metric="euclidean", n_neighbors=n_neighbors)
+        index = NearestNeighbors(metric=\"euclidean\", n_neighbors=n_neighbors)
         index.fit(matrix)
         return preprocessor, matrix, index
-
-    return build_similarity_tools, fit_tabfm_binary
+    """,
+    name="_"
+)
 
 
 @app.cell(hide_code=True)
@@ -939,74 +932,81 @@ def _(mo):
     return
 
 
-@app.cell
-def _(np, pd):
+app._unparsable_cell(
+    """
     def make_insurance_dataset(rows: int = 1200, seed: int = 7) -> pd.DataFrame:
+    \"\"\"Generate a synthetic book of historical insurance quotes.
+
+    Creates customer, vehicle, and coverage attributes, derives premium and
+    price-per-mile fields with a fixed pricing formula, then simulates an
+    accepted/rejected label from a logistic model. Seeded so the demo data
+    is reproducible.
+    \"\"\"
         rng = np.random.default_rng(seed)
-        coverage_tiers = np.array(["Basic", "Standard", "Premium"])
-        vehicle_types = np.array(["Sedan", "SUV", "Truck", "EV"])
-        regions = np.array(["Urban", "Suburban", "Rural"])
+        coverage_tiers = np.array([\"Basic\", \"Standard\", \"Premium\"])
+        vehicle_types = np.array([\"Sedan\", \"SUV\", \"Truck\", \"EV\"])
+        regions = np.array([\"Urban\", \"Suburban\", \"Rural\"])
 
         quote_df = pd.DataFrame(
             {
-                "driver_age": rng.integers(21, 76, rows),
-                "vehicle_age": rng.integers(0, 16, rows),
-                "annual_mileage": rng.integers(6000, 26000, rows),
-                "accident_count": rng.choice([0, 1, 2, 3], size=rows, p=[0.62, 0.23, 0.11, 0.04]),
-                "loyalty_years": rng.integers(0, 16, rows),
-                "bundle_home": rng.integers(0, 2, rows),
-                "coverage_tier": rng.choice(coverage_tiers, size=rows, p=[0.3, 0.45, 0.25]),
-                "vehicle_type": rng.choice(vehicle_types, size=rows, p=[0.4, 0.3, 0.15, 0.15]),
-                "region": rng.choice(regions, size=rows, p=[0.38, 0.42, 0.2]),
+                \"driver_age\": rng.integers(21, 76, rows),
+                \"vehicle_age\": rng.integers(0, 16, rows),
+                \"annual_mileage\": rng.integers(6000, 26000, rows),
+                \"accident_count\": rng.choice([0, 1, 2, 3], size=rows, p=[0.62, 0.23, 0.11, 0.04]),
+                \"loyalty_years\": rng.integers(0, 16, rows),
+                \"bundle_home\": rng.integers(0, 2, rows),
+                \"coverage_tier\": rng.choice(coverage_tiers, size=rows, p=[0.3, 0.45, 0.25]),
+                \"vehicle_type\": rng.choice(vehicle_types, size=rows, p=[0.4, 0.3, 0.15, 0.15]),
+                \"region\": rng.choice(regions, size=rows, p=[0.38, 0.42, 0.2]),
             }
         )
 
-        tier_factor = quote_df["coverage_tier"].map(
-            {"Basic": 0.9, "Standard": 1.15, "Premium": 1.45}
+        tier_factor = quote_df[\"coverage_tier\"].map(
+            {\"Basic\": 0.9, \"Standard\": 1.15, \"Premium\": 1.45}
         )
-        vehicle_factor = quote_df["vehicle_type"].map(
-            {"Sedan": 1.0, "SUV": 1.12, "Truck": 1.18, "EV": 1.08}
+        vehicle_factor = quote_df[\"vehicle_type\"].map(
+            {\"Sedan\": 1.0, \"SUV\": 1.12, \"Truck\": 1.18, \"EV\": 1.08}
         )
-        region_factor = quote_df["region"].map(
-            {"Urban": 1.12, "Suburban": 1.0, "Rural": 0.93}
+        region_factor = quote_df[\"region\"].map(
+            {\"Urban\": 1.12, \"Suburban\": 1.0, \"Rural\": 0.93}
         )
 
-        quote_df["base_premium"] = (
+        quote_df[\"base_premium\"] = (
             520
-            + quote_df["vehicle_age"] * 18
-            + quote_df["annual_mileage"] * 0.014
-            + quote_df["accident_count"] * 185
-            + (75 - quote_df["driver_age"]).clip(lower=0) * 4
+            + quote_df[\"vehicle_age\"] * 18
+            + quote_df[\"annual_mileage\"] * 0.014
+            + quote_df[\"accident_count\"] * 185
+            + (75 - quote_df[\"driver_age\"]).clip(lower=0) * 4
         ) * tier_factor * vehicle_factor * region_factor
-        quote_df["base_premium"] = quote_df["base_premium"].round(0)
+        quote_df[\"base_premium\"] = quote_df[\"base_premium\"].round(0)
 
-        quote_df["deductible"] = rng.choice(
+        quote_df[\"deductible\"] = rng.choice(
             [250, 500, 750, 1000, 1500],
             size=rows,
             p=[0.12, 0.35, 0.18, 0.25, 0.10],
         )
-        quote_df["discount_pct"] = rng.integers(0, 21, rows)
-        quote_df["premium_after_discount"] = (
-            quote_df["base_premium"] * (1 - quote_df["discount_pct"] / 100)
+        quote_df[\"discount_pct\"] = rng.integers(0, 21, rows)
+        quote_df[\"premium_after_discount\"] = (
+            quote_df[\"base_premium\"] * (1 - quote_df[\"discount_pct\"] / 100)
         ).round(0)
-        quote_df["price_per_mile"] = (
-            quote_df["premium_after_discount"] / quote_df["annual_mileage"]
+        quote_df[\"price_per_mile\"] = (
+            quote_df[\"premium_after_discount\"] / quote_df[\"annual_mileage\"]
         ).round(4)
 
         logit = (
             2.4
-            - 0.0019 * quote_df["premium_after_discount"]
-            + 0.0005 * quote_df["deductible"]
-            + 0.05 * quote_df["discount_pct"]
-            + 0.10 * quote_df["loyalty_years"]
-            + 0.45 * quote_df["bundle_home"]
-            - 0.55 * quote_df["accident_count"]
-            - 0.10 * (quote_df["coverage_tier"] == "Premium").astype(float)
-            + 0.14 * (quote_df["region"] == "Rural").astype(float)
+            - 0.0019 * quote_df[\"premium_after_discount\"]
+            + 0.0005 * quote_df[\"deductible\"]
+            + 0.05 * quote_df[\"discount_pct\"]
+            + 0.10 * quote_df[\"loyalty_years\"]
+            + 0.45 * quote_df[\"bundle_home\"]
+            - 0.55 * quote_df[\"accident_count\"]
+            - 0.10 * (quote_df[\"coverage_tier\"] == \"Premium\").astype(float)
+            + 0.14 * (quote_df[\"region\"] == \"Rural\").astype(float)
             + rng.normal(0, 0.55, rows)
         )
         probability = 1 / (1 + np.exp(-logit))
-        quote_df["accepted"] = rng.binomial(1, probability)
+        quote_df[\"accepted\"] = rng.binomial(1, probability)
         return quote_df
 
     def build_insurance_quote(
@@ -1023,9 +1023,15 @@ def _(np, pd):
         deductible: float,
         discount_pct: float,
     ) -> pd.DataFrame:
-        tier_factor = {"Basic": 0.9, "Standard": 1.15, "Premium": 1.45}[coverage_tier]
-        vehicle_factor = {"Sedan": 1.0, "SUV": 1.12, "Truck": 1.18, "EV": 1.08}[vehicle_type]
-        region_factor = {"Urban": 1.12, "Suburban": 1.0, "Rural": 0.93}[region]
+    \"\"\"Build a one-row insurance quote from the what-if UI inputs.
+
+    Applies the same pricing formula used by make_insurance_dataset so the
+    edited quote is consistent with the historical book of quotes, and can
+    be scored by the trained acceptance model.
+    \"\"\"
+        tier_factor = {\"Basic\": 0.9, \"Standard\": 1.15, \"Premium\": 1.45}[coverage_tier]
+        vehicle_factor = {\"Sedan\": 1.0, \"SUV\": 1.12, \"Truck\": 1.18, \"EV\": 1.08}[vehicle_type]
+        region_factor = {\"Urban\": 1.12, \"Suburban\": 1.0, \"Rural\": 0.93}[region]
         base_premium = (
             520
             + vehicle_age * 18
@@ -1037,25 +1043,26 @@ def _(np, pd):
         return pd.DataFrame(
             [
                 {
-                    "driver_age": float(driver_age),
-                    "vehicle_age": float(vehicle_age),
-                    "annual_mileage": float(annual_mileage),
-                    "accident_count": float(accident_count),
-                    "loyalty_years": float(loyalty_years),
-                    "bundle_home": int(bundle_home),
-                    "coverage_tier": coverage_tier,
-                    "vehicle_type": vehicle_type,
-                    "region": region,
-                    "base_premium": round(base_premium, 0),
-                    "deductible": float(deductible),
-                    "discount_pct": float(discount_pct),
-                    "premium_after_discount": round(premium_after_discount, 0),
-                    "price_per_mile": round(premium_after_discount / annual_mileage, 4),
+                    \"driver_age\": float(driver_age),
+                    \"vehicle_age\": float(vehicle_age),
+                    \"annual_mileage\": float(annual_mileage),
+                    \"accident_count\": float(accident_count),
+                    \"loyalty_years\": float(loyalty_years),
+                    \"bundle_home\": int(bundle_home),
+                    \"coverage_tier\": coverage_tier,
+                    \"vehicle_type\": vehicle_type,
+                    \"region\": region,
+                    \"base_premium\": round(base_premium, 0),
+                    \"deductible\": float(deductible),
+                    \"discount_pct\": float(discount_pct),
+                    \"premium_after_discount\": round(premium_after_discount, 0),
+                    \"price_per_mile\": round(premium_after_discount / annual_mileage, 4),
                 }
             ]
         )
-
-    return build_insurance_quote, make_insurance_dataset
+    """,
+    name="_"
+)
 
 
 @app.cell
@@ -1387,58 +1394,65 @@ def _(mo):
     return
 
 
-@app.cell
-def _(np, pd):
+app._unparsable_cell(
+    """
     def make_retail_dataset(rows: int = 420, seed: int = 11) -> pd.DataFrame:
+    \"\"\"Generate a synthetic product catalog for the healthier-alternatives demo.
+
+    Creates category, flavor, texture, brand, nutrition, and price columns,
+    then simulates a healthy-fit label from a logistic model plus a numeric
+    nutrition score. Seeded so the catalog is reproducible.
+    \"\"\"
         rng = np.random.default_rng(seed)
-        categories = np.array(["Cereal", "Granola", "Snack Bar", "Crackers"])
-        flavor_profiles = np.array(["Nutty", "Fruity", "Chocolate", "Plain"])
-        textures = np.array(["Crunchy", "Soft", "Light"])
-        brands = np.array(["Northfield", "Harvest", "Bright", "Peak"])
+        categories = np.array([\"Cereal\", \"Granola\", \"Snack Bar\", \"Crackers\"])
+        flavor_profiles = np.array([\"Nutty\", \"Fruity\", \"Chocolate\", \"Plain\"])
+        textures = np.array([\"Crunchy\", \"Soft\", \"Light\"])
+        brands = np.array([\"Northfield\", \"Harvest\", \"Bright\", \"Peak\"])
 
         retail_df = pd.DataFrame(
             {
-                "category": rng.choice(categories, size=rows, p=[0.35, 0.2, 0.25, 0.2]),
-                "flavor_profile": rng.choice(flavor_profiles, size=rows),
-                "texture": rng.choice(textures, size=rows),
-                "brand_family": rng.choice(brands, size=rows),
-                "sugar_g": rng.integers(2, 22, rows),
-                "fiber_g": rng.integers(1, 12, rows),
-                "protein_g": rng.integers(2, 16, rows),
-                "calories": rng.integers(80, 240, rows),
-                "price_usd": rng.uniform(2.5, 8.5, rows).round(2),
-                "sodium_mg": rng.integers(40, 360, rows),
-                "whole_grain": rng.integers(0, 2, rows),
+                \"category\": rng.choice(categories, size=rows, p=[0.35, 0.2, 0.25, 0.2]),
+                \"flavor_profile\": rng.choice(flavor_profiles, size=rows),
+                \"texture\": rng.choice(textures, size=rows),
+                \"brand_family\": rng.choice(brands, size=rows),
+                \"sugar_g\": rng.integers(2, 22, rows),
+                \"fiber_g\": rng.integers(1, 12, rows),
+                \"protein_g\": rng.integers(2, 16, rows),
+                \"calories\": rng.integers(80, 240, rows),
+                \"price_usd\": rng.uniform(2.5, 8.5, rows).round(2),
+                \"sodium_mg\": rng.integers(40, 360, rows),
+                \"whole_grain\": rng.integers(0, 2, rows),
             }
         )
-        retail_df["product_name"] = [
-            f"{retail_df.loc[i, 'brand_family']} {retail_df.loc[i, 'category']} {i + 1}"
+        retail_df[\"product_name\"] = [
+            f\"{retail_df.loc[i, 'brand_family']} {retail_df.loc[i, 'category']} {i + 1}\"
             for i in retail_df.index
         ]
         health_logit = (
-            0.55 * retail_df["fiber_g"]
-            + 0.38 * retail_df["protein_g"]
-            - 0.35 * retail_df["sugar_g"]
-            - 0.012 * retail_df["calories"]
-            - 0.18 * retail_df["price_usd"]
-            - 0.002 * retail_df["sodium_mg"]
-            + 0.75 * retail_df["whole_grain"]
-            + 0.20 * (retail_df["category"] == "Granola").astype(float)
+            0.55 * retail_df[\"fiber_g\"]
+            + 0.38 * retail_df[\"protein_g\"]
+            - 0.35 * retail_df[\"sugar_g\"]
+            - 0.012 * retail_df[\"calories\"]
+            - 0.18 * retail_df[\"price_usd\"]
+            - 0.002 * retail_df[\"sodium_mg\"]
+            + 0.75 * retail_df[\"whole_grain\"]
+            + 0.20 * (retail_df[\"category\"] == \"Granola\").astype(float)
             + rng.normal(0, 1.1, rows)
         )
         health_probability = 1 / (1 + np.exp(-(health_logit - 2.0)))
-        retail_df["healthy_fit"] = rng.binomial(1, health_probability)
-        retail_df["nutrition_score"] = (
-            retail_df["fiber_g"] * 2.2
-            + retail_df["protein_g"] * 1.6
-            + retail_df["whole_grain"] * 4.0
-            - retail_df["sugar_g"] * 1.5
-            - retail_df["calories"] * 0.03
-            - retail_df["sodium_mg"] * 0.01
+        retail_df[\"healthy_fit\"] = rng.binomial(1, health_probability)
+        retail_df[\"nutrition_score\"] = (
+            retail_df[\"fiber_g\"] * 2.2
+            + retail_df[\"protein_g\"] * 1.6
+            + retail_df[\"whole_grain\"] * 4.0
+            - retail_df[\"sugar_g\"] * 1.5
+            - retail_df[\"calories\"] * 0.03
+            - retail_df[\"sodium_mg\"] * 0.01
         ).round(2)
         return retail_df
-
-    return (make_retail_dataset,)
+    """,
+    name="_"
+)
 
 
 @app.cell
