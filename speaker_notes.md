@@ -237,113 +237,363 @@ You can use something close to this at the start:
 
 Use this while walking through the notebook.
 
-### Opening cells / notebook title
+### Notebook framing cells
+
+Use the first three markdown sections as your setup story before you go step by step.
+
+Code snippet:
+
+```python
+mo.md("""
+# LDM-style fraud triage with TabFM
+...
+- **Risk scoring:** predict fraud probability for a transaction
+- **What-if analysis:** change transaction attributes and recompute the score
+- **Similar prior cases:** retrieve the closest historical transactions
+""")
+```
 
 Say:
 
-> "This notebook demonstrates an LDM-style workflow. We use historical records, a tabular foundation model, and an interactive interface to support decisions on a new case."
+> "Before we get into the mechanics, the notebook tells the audience exactly what this is: an LDM-style workflow with scoring, what-if analysis, and similar-case retrieval."
 
 What to emphasize:
 
-- This is a business workflow demo.
-- The interface is there to make the model useful to a human user.
+- The notebook is organized around business interactions, not just model training.
+- The "How this maps to the IBM article" table is useful for setting expectations early.
+- The "How to read the outputs" section helps you define what the fraud score and rule-based flags mean before the live interaction starts.
 
-### Setup / import cells
+### Step 1: Load the notebook tools
+
+Code snippet:
+
+```python
+import marimo as mo
+import numpy as np
+import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.metrics import average_precision_score, roc_auc_score
+from tabfm import TabFMClassifier, tabfm_v1_0_0_pytorch as tabfm_v1_0_0
+```
 
 Say:
 
-> "This is only setup. We are loading the libraries needed for the demo. The important part is not the code itself, but what it enables."
+> "This is only setup. We load the notebook, data, modeling, and similarity tools. The point is not the imports themselves, but the workflow they enable."
 
 What to emphasize:
 
-- Do not stay here long.
-- Move quickly to business meaning.
+- Move quickly here.
+- The important idea is that one notebook combines UI, modeling, and retrieval.
 
-### Data loading cell
+### Step 2: Load a sample of transaction data
+
+Code snippet:
+
+```python
+DATA_URL = (
+    "https://huggingface.co/datasets/"
+    "CiferAI/Cifer-Fraud-Detection-Dataset-AF/resolve/main/"
+    "Cifer-Fraud-Detection-Dataset-AF-part-1-14.csv"
+)
+RAW_COLUMNS = [
+    "step", "type", "amount", "oldbalanceOrg", "newbalanceOrig",
+    "oldbalanceDest", "newbalanceDest", "isFraud", "isFlaggedFraud",
+]
+```
 
 Say:
 
-> "Here we load a sample of historical fraud transactions. In a real enterprise setting, this would be your organization's historical case data."
+> "Here we point to the public fraud dataset and define the transaction columns we want to work with."
+
+Then add:
+
+> "In a real enterprise implementation, this would be your own historical case table."
 
 What to emphasize:
 
 - Historical rows are the raw material.
-- The system learns patterns from examples.
+- The demo starts from structured business data, not unstructured text.
 
-### Data enrichment / preparation cells
+### Step 2 continued: enrich the transactions and build the what-if row logic
+
+Code snippet:
+
+```python
+def _enrich_transactions(frame: pd.DataFrame) -> pd.DataFrame:
+    enriched["hour_of_day"] = enriched["step"] % 24
+    enriched["origin_delta"] = enriched["oldbalanceOrg"] - enriched["newbalanceOrig"]
+    enriched["dest_delta"] = enriched["newbalanceDest"] - enriched["oldbalanceDest"]
+    enriched["origin_balance_error"] = (enriched["origin_delta"] - enriched["amount"]).abs()
+    enriched["dest_balance_error"] = (enriched["dest_delta"] - enriched["amount"]).abs()
+    enriched["log_amount"] = np.log1p(enriched["amount"])
+```
 
 Say:
 
-> "We add a few derived features so the model can better recognize patterns, such as whether the money movement looks consistent."
+> "This is the small amount of feature engineering in the demo. We create a few fields that capture whether the balance movement looks normal or suspicious."
 
 Then add:
 
-> "I want to be transparent here: this demo still uses a small amount of feature engineering. But compared with a traditional project, the amount of custom modeling work is much lower. That is part of the appeal of pretrained tabular models."
+> "So the honest claim is not zero feature engineering. The honest claim is much less bespoke work than a traditional end-to-end modeling project."
 
 What to emphasize:
 
-- This is normal analytics engineering.
-- We are turning raw data into a better decision context.
-- The broader promise is to reduce, not necessarily eliminate, handcrafted feature work.
+- This is transparent, simple analytics engineering.
+- The balance error fields are especially useful because they capture suspicious money-movement patterns.
 
-### Train/test split and model training
+### Step 2 continued: stream a balanced interactive sample
+
+Code snippet:
+
+```python
+@functools.lru_cache(maxsize=1)
+def load_cifer_sample(
+    normal_rows: int = 2400,
+    fraud_rows: int = 300,
+    chunk_size: int = 150_000,
+    random_state: int = 42,
+) -> pd.DataFrame:
+```
 
 Say:
 
-> "This is where the model learns from historical cases. We are teaching it to recognize patterns associated with fraud-like behavior."
+> "The notebook does not load the entire dataset. It streams the file in chunks and keeps a manageable interactive sample so the demo stays usable."
+
+What to emphasize:
+
+- This is a demo design decision, not a conceptual limitation.
+- The sample still gives enough history for scoring and retrieval.
+
+### Step 3: Create the working dataset for the demo
+
+Code snippet:
+
+```python
+modeling_df = load_cifer_sample()
+```
+
+Say:
+
+> "This gives us the working historical transaction table for the notebook. Think of it as the case history the model and retrieval layer can learn from."
+
+What to emphasize:
+
+- This is the historical memory of the workflow.
+- Everything later depends on this table.
+
+### Debug preview cell right after Step 3
+
+Code snippet:
+
+```python
+print("Loaded dataframe columns:")
+print(modeling_df.columns.tolist())
+print("\nTop 5 rows:")
+print(modeling_df.head(5).to_string(index=False))
+```
+
+Say:
+
+> "This is just a quick inspection cell so we can confirm the dataset loaded correctly."
+
+What to emphasize:
+
+- You can scroll past this quickly in a presentation.
+- It is useful as a sanity check, not as a main storytelling moment.
+
+### Step 4: Review the sample statistics
+
+Code snippet:
+
+```python
+fraud_rate = modeling_df["isFraud"].mean()
+flagged_rate = modeling_df["isFlaggedFraud"].mean()
+```
+
+Say:
+
+> "This gives us a quick profile of the sample: how much fraud is in it, and how often the built-in rule flag would trigger."
+
+What to emphasize:
+
+- This grounds the audience in the data mix.
+- It also helps distinguish the simple rule flag from the learned model score.
+
+### Step 5: Choose the features the model will use
+
+Code snippet:
+
+```python
+feature_columns = [
+    "step", "hour_of_day", "type", "amount", "log_amount",
+    "oldbalanceOrg", "newbalanceOrig", "oldbalanceDest", "newbalanceDest",
+    "isFlaggedFraud", "origin_delta", "dest_delta",
+    "origin_balance_error", "dest_balance_error",
+]
+```
+
+Say:
+
+> "This cell defines the transaction attributes the model will consider when deciding whether a case looks fraud-like."
+
+What to emphasize:
+
+- These are still close to the original business columns.
+- This is part of the reduced manual feature-engineering story.
+
+### Step 6: Train the fraud-risk model and test it on held-out data
+
+Code snippet:
+
+```python
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, stratify=y, random_state=42
+)
+tabfm_model = tabfm_v1_0_0.load(model_type="classification")
+classifier = TabFMClassifier(model=tabfm_model)
+classifier.fit(X_context, y_context.to_numpy())
+```
+
+Say:
+
+> "This is where TabFM learns from historical examples and turns those rows into a predictive fraud signal."
 
 Then add:
 
-> "The important message is not that the model is perfect. The important message is that we can create a useful predictive signal from structured historical data."
-
-Then, if you want the stronger strategic point:
-
-> "In a more traditional workflow, this stage often takes much more custom feature design and modeling effort. Here, a pretrained tabular model helps compress that path from data to usable signal."
+> "The notebook also tries to make the context rows more representative by stratifying and matching the real fraud ratio, instead of feeding the model a simplistic random slice."
 
 What to emphasize:
 
-- Prediction is one component.
-- The full value comes from prediction plus interaction plus retrieval.
-- This is part of the "skip some of the classic data-science handwork" story.
+- Prediction is one component of the overall workflow.
+- The important outcome is a usable signal, not a claim of perfect fraud detection.
 
-### Evaluation output
+### Step 7: Review how well the model performed on a test slice
+
+Code snippet:
+
+```python
+tabfm_auc = roc_auc_score(y_test, fraud_scores)
+tabfm_ap = average_precision_score(y_test, fraud_scores)
+baseline_auc = roc_auc_score(y_test, baseline_scores)
+baseline_ap = average_precision_score(y_test, baseline_scores)
+```
 
 Say:
 
-> "These metrics are a quick quality check. For this presentation, the main takeaway is that the model is producing a meaningful signal, not random output."
+> "These metrics are just a quick sanity check. They show that the model is producing a meaningful signal on held-out data."
 
 What to emphasize:
 
-- Keep it high level.
-- Do not over-explain metrics unless asked.
+- Keep this high level unless someone asks for details.
+- The comparison with `isFlaggedFraud` is useful because it shows the notebook is doing more than a simple hard-coded rule.
 
-### Interactive controls
+### Step 8: Build the case-comparison layer
+
+Code snippet:
+
+```python
+similarity_preprocessor = ColumnTransformer(
+    transformers=[
+        ("numeric", StandardScaler(), numeric_columns),
+        ("categorical", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_columns),
+    ]
+)
+similarity_index = NearestNeighbors(metric="euclidean", n_neighbors=8)
+```
 
 Say:
 
-> "This is where the concept becomes operational. A user can edit the current case directly and see how the signal changes."
-
-Then:
-
-> "That is the beginning of an LDM-style user experience: not just viewing data, but interacting with a model built on historical data."
+> "This is the retrieval layer. It builds the similarity machinery that lets the notebook find the closest historical transactions for any new case."
 
 What to emphasize:
 
-- This is where business value becomes visible.
-- The audience should imagine a sales tool, fraud desk, underwriting screen, or decision-support console.
+- This is central to the LDM-style story.
+- The audience should understand that the notebook is not only scoring, but also comparing.
 
-### Candidate row / what-if case construction
+### Step 9: Create the interactive controls
+
+Code snippet:
+
+```python
+transaction_type = mo.ui.dropdown(...)
+step_value = mo.ui.slider(...)
+amount_value = mo.ui.number(...)
+oldbalance_org_value = mo.ui.number(...)
+oldbalance_dest_value = mo.ui.number(...)
+origin_updates_normally = mo.ui.switch(...)
+dest_updates_normally = mo.ui.switch(...)
+```
 
 Say:
 
-> "We construct a new case from the user's inputs and send it through the same logic as the historical data. That lets us test scenarios before action is taken."
+> "This is where the workflow becomes operational. A user can directly edit the live case instead of passively looking at a report."
 
 What to emphasize:
 
-- This is scenario analysis.
-- This is useful in pricing, approvals, triage, and recommendations.
+- This is the shift from analytics to decision support.
+- Ask the audience to imagine a fraud desk, underwriting screen, or triage console.
 
-### Fraud score output
+### Step 10: Arrange the controls in one place
+
+Code snippet:
+
+```python
+controls = mo.vstack(
+    [
+        mo.md("## Interactive what-if controls"),
+        transaction_type,
+        step_value,
+        amount_value,
+        oldbalance_org_value,
+        oldbalance_dest_value,
+        origin_updates_normally,
+        dest_updates_normally,
+    ]
+)
+```
+
+Say:
+
+> "This cell is simple, but it matters for usability. It puts the editable inputs into one clean control panel."
+
+What to emphasize:
+
+- The UI matters because the point is human decision support.
+- A good interface is part of making historical data operational.
+
+### Step 11: Score the edited transaction
+
+Code snippet:
+
+```python
+candidate_frame = build_candidate_row(...)
+candidate_features = candidate_frame[feature_columns]
+candidate_probability = float(
+    classifier.predict_proba(candidate_features)[0][positive_index]
+)
+_, neighbor_positions = similarity_index.kneighbors(candidate_similarity)
+similar_cases = modeling_df.iloc[neighbor_positions[0]].copy()
+```
+
+Say:
+
+> "This is the core live workflow: build a candidate case from the UI, score it with TabFM, and immediately pull back similar historical cases."
+
+What to emphasize:
+
+- This is the best place to explain the full loop.
+- Prediction and retrieval happen together, not as separate disconnected tasks.
+
+### Step 12: Show the current risk result
+
+Code snippet:
+
+```python
+- **TabFM fraud probability:** `{candidate_probability:.1%}`
+- **Rule-based flag (`isFlaggedFraud`):** `{current_flag}`
+- **Origin balance error:** `{candidate_frame.loc[0, "origin_balance_error"]:.2f}`
+- **Destination balance error:** `{candidate_frame.loc[0, "dest_balance_error"]:.2f}`
+```
 
 Say:
 
@@ -351,53 +601,204 @@ Say:
 
 What to emphasize:
 
-- Avoid saying the model "knows."
-- Say it "estimates" or "signals."
+- Say the model "estimates" or "signals."
+- Use the balance errors and rule flag as lightweight explanation aids.
 
-### Similar historical cases
+### Step 13: Show similar past cases
 
-Say:
+Code snippet:
 
-> "This is one of the most important parts. We are not only giving a score. We are also giving context by showing similar past cases."
-
-Then:
-
-> "That makes the system easier to trust and easier to use, because the analyst is not forced to treat the model as a black box."
-
-What to emphasize:
-
-- Similar-case retrieval is central to the LDM story.
-- It supports explanation, investigation, and confidence.
-
-### Insurance extension
+```python
+similar_cases[["tabfm_demo_distance_rank", *DISPLAY_COLUMNS]]
+```
 
 Say:
 
-> "This mirrors one of the strongest examples in the IBM article. The idea is to estimate the chance that a quote will be accepted, then let the user test changes like discounts or deductibles."
+> "This is one of the most important parts of the notebook. We are not only returning a score. We are returning comparable historical cases for context."
 
-Then:
+Then add:
 
-> "The business value is not only prediction. It is the ability to try candidate quotes before choosing one."
-
-Then:
-
-> "This is also where the reduced feature-engineering story becomes commercially interesting. If a team can stand up this kind of workflow faster, they can test business value much earlier."
+> "That makes the system easier to trust because the analyst is not forced to treat the score as a black box."
 
 What to emphasize:
 
-- This is directly aligned with the IBM article.
-- It is a decision optimization workflow.
+- Similar-case retrieval is central to the LDM idea.
+- This supports explanation, investigation, and confidence.
 
-### Retail extension
+### Step 14: Show the context rows passed to TabFM
+
+Code snippet:
+
+```python
+context_preview = modeling_df.loc[X_context.index].copy()
+context_preview["context_label"] = y_context.values
+```
 
 Say:
 
-> "This mirrors the retailer use case in the article: help a user find alternatives that are still relevant to their intent, but better on a target dimension such as health."
+> "This section makes the in-context learning setup more visible by showing examples the model actually saw as context."
 
 What to emphasize:
 
-- Recommendation is not only similarity.
-- It can include a business objective such as healthier, safer, cheaper, or more profitable.
+- This helps demystify the model.
+- It reinforces that the notebook is grounded in historical examples.
+
+### Insurance extension overview
+
+Start the extension with the notebook heading:
+
+```python
+mo.md("""
+# Future extension 1: insurance quote optimization
+""")
+```
+
+Say:
+
+> "Now the notebook shows that the same interaction pattern can be reused for another business problem: insurance quote optimization."
+
+### Insurance step 1: generate historical quote data
+
+Code snippet:
+
+```python
+def make_insurance_dataset(rows: int = 1200, seed: int = 7) -> pd.DataFrame:
+    ...
+    quote_df["accepted"] = rng.binomial(1, probability)
+```
+
+Say:
+
+> "This synthetic dataset stands in for a historical book of insurance quotes, including customer, vehicle, pricing, and whether the quote was accepted."
+
+What to emphasize:
+
+- This is a synthetic example, but the workflow is realistic.
+- The same structure applies: historical rows, score, what-if edits, similar cases.
+
+### Insurance step 2: fit a quote-acceptance model
+
+Code snippet:
+
+```python
+(
+    insurance_classifier,
+    insurance_positive_index,
+    ...,
+) = fit_tabfm_binary(insurance_X, insurance_y, random_state=19)
+```
+
+Say:
+
+> "This trains a model that estimates the chance a quote will be accepted."
+
+Then add:
+
+> "That matters because now a user can test quote changes before deciding what to offer."
+
+What to emphasize:
+
+- This directly matches one of the strongest IBM examples.
+- The business value is optimization, not just prediction.
+
+### Insurance step 3: edit a quote and rescore it
+
+Code snippet:
+
+```python
+insurance_acceptance_probability = float(
+    insurance_classifier.predict_proba(insurance_candidate_features)[0][
+        insurance_positive_index
+    ]
+)
+```
+
+Say:
+
+> "Here the presenter can change deductible, discount, and other quote details, then immediately see how likely the quote is to be accepted."
+
+What to emphasize:
+
+- This is a live what-if pricing workflow.
+- It is a good example of how historical data can directly support a business decision.
+
+### Retail extension overview
+
+Start this extension with the notebook heading:
+
+```python
+mo.md("""
+# Future extension 2: retail healthier alternatives
+""")
+```
+
+Say:
+
+> "The final section shows the same pattern in a recommendation setting: start from one product, find similar ones, and rank the healthier alternatives."
+
+### Retail step 1: generate a product catalog
+
+Code snippet:
+
+```python
+def make_retail_dataset(rows: int = 420, seed: int = 11) -> pd.DataFrame:
+    ...
+    retail_df["healthy_fit"] = rng.binomial(1, health_probability)
+    retail_df["nutrition_score"] = (...).round(2)
+```
+
+Say:
+
+> "This synthetic catalog gives each product structured attributes like flavor, texture, nutrition, and price, plus a label for whether it tends to be a strong healthier alternative."
+
+What to emphasize:
+
+- Again, the point is the interaction pattern.
+- The data is structured rows and columns, just like the IBM framing.
+
+### Retail step 2: fit the healthier-alternative model
+
+Code snippet:
+
+```python
+(
+    retail_classifier,
+    retail_positive_index,
+    ...,
+) = fit_tabfm_binary(retail_X, retail_y, random_state=23)
+```
+
+Say:
+
+> "This model learns which products look like strong healthier alternatives."
+
+What to emphasize:
+
+- The model score is only one part.
+- Similarity is still needed so the alternatives stay relevant to the shopper's intent.
+
+### Retail step 3: pick a product and rank alternatives
+
+Code snippet:
+
+```python
+healthier_pool["overall_rank_score"] = (
+    health_weight * healthier_pool["healthy_fit_probability"]
+    + (1 - health_weight) * healthier_pool["similarity_score"]
+)
+recommended_products = healthier_pool.sort_values(
+    "overall_rank_score", ascending=False
+).head(6)
+```
+
+Say:
+
+> "This is a nice example of recommendation with a business objective. We are not only finding similar products. We are combining similarity with a health-oriented ranking goal."
+
+What to emphasize:
+
+- Recommendation is not only nearest neighbor search.
+- It can be steered toward healthier, safer, cheaper, or more profitable alternatives depending on the business goal.
 
 ---
 

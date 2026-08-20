@@ -10,7 +10,7 @@
 
 import marimo
 
-__generated_with = "0.23.15"
+__generated_with = "0.24.0"
 app = marimo.App(width="wide", auto_download=["html"])
 
 
@@ -847,9 +847,26 @@ def _(mo):
     return
 
 
-app._unparsable_cell(
-    """
+@app.cell
+def _(
+    ColumnTransformer,
+    NearestNeighbors,
+    OneHotEncoder,
+    StandardScaler,
+    TabFMClassifier,
+    pd,
+    tabfm_v1_0_0,
+    train_test_split,
+):
     # In context learning for TabFM + returns eval pieces
+    """Train a TabFM classifier and return everything needed for scoring.
+
+    Splits the data into train/test, samples a balanced set of per-class
+    "context" rows (the few examples TabFM conditions on), fits the
+    classifier, and scores the holdout set. Returns the fitted model,
+    the positive-class index, the context rows/labels, and test scores
+    so callers can report AUC / average precision.
+    """
     def fit_tabfm_binary(
         X: pd.DataFrame,
         y: pd.Series,
@@ -857,14 +874,7 @@ app._unparsable_cell(
         random_state: int = 42,
         context_cap: int = 50,
     ):
-    \"\"\"Train a TabFM classifier and return everything needed for scoring.
 
-    Splits the data into train/test, samples a balanced set of per-class
-    \"context\" rows (the few examples TabFM conditions on), fits the
-    classifier, and scores the holdout set. Returns the fitted model,
-    the positive-class index, the context rows/labels, and test scores
-    so callers can report AUC / average precision.
-    \"\"\"
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
@@ -886,7 +896,7 @@ app._unparsable_cell(
         y_context = y_train.loc[X_context.index]
 
         classifier = TabFMClassifier(
-            model=tabfm_v1_0_0.load(model_type=\"classification\")
+            model=tabfm_v1_0_0.load(model_type="classification")
         )
         classifier.fit(X_context, y_context.to_numpy())
         positive_index = list(classifier.classes_).index(1)
@@ -894,11 +904,17 @@ app._unparsable_cell(
         test_scores = pd.Series(
             test_probabilities,
             index=X_test.index,
-            name=\"tabfm_probability\",
+            name="tabfm_probability",
         )
         return classifier, positive_index, X_context, y_context, X_test, y_test, test_scores
 
     # Builds preprocessor + NN index
+    """Build the preprocessing pipeline and nearest-neighbor index.
+
+    Scales numeric columns and one-hot encodes categorical columns into a
+    single feature matrix, then fits a NearestNeighbors index over it.
+    Used to retrieve the closest historical rows for any new case.
+    """
     def build_similarity_tools(
         frame: pd.DataFrame,
         categorical_columns: list[str],
@@ -906,29 +922,23 @@ app._unparsable_cell(
         *,
         n_neighbors: int = 8,
     ):
-    \"\"\"Build the preprocessing pipeline and nearest-neighbor index.
 
-    Scales numeric columns and one-hot encodes categorical columns into a
-    single feature matrix, then fits a NearestNeighbors index over it.
-    Used to retrieve the closest historical rows for any new case.
-    \"\"\"
         preprocessor = ColumnTransformer(
             transformers=[
-                (\"numeric\", StandardScaler(), numeric_columns),
+                ("numeric", StandardScaler(), numeric_columns),
                 (
-                    \"categorical\",
-                    OneHotEncoder(handle_unknown=\"ignore\", sparse_output=False),
+                    "categorical",
+                    OneHotEncoder(handle_unknown="ignore", sparse_output=False),
                     categorical_columns,
                 ),
             ]
         )
         matrix = preprocessor.fit_transform(frame)
-        index = NearestNeighbors(metric=\"euclidean\", n_neighbors=n_neighbors)
+        index = NearestNeighbors(metric="euclidean", n_neighbors=n_neighbors)
         index.fit(matrix)
         return preprocessor, matrix, index
-    """,
-    name="_"
-)
+
+    return build_similarity_tools, fit_tabfm_binary
 
 
 @app.cell(hide_code=True)
@@ -941,83 +951,89 @@ def _(mo):
     return
 
 
-app._unparsable_cell(
-    """
-    def make_insurance_dataset(rows: int = 1200, seed: int = 7) -> pd.DataFrame:
-    \"\"\"Generate a synthetic book of historical insurance quotes.
+@app.cell
+def _(np, pd):
+    """Generate a synthetic book of historical insurance quotes.
 
     Creates customer, vehicle, and coverage attributes, derives premium and
     price-per-mile fields with a fixed pricing formula, then simulates an
     accepted/rejected label from a logistic model. Seeded so the demo data
     is reproducible.
-    \"\"\"
+    """
+    def make_insurance_dataset(rows: int = 1200, seed: int = 7) -> pd.DataFrame:
+
         rng = np.random.default_rng(seed)
-        coverage_tiers = np.array([\"Basic\", \"Standard\", \"Premium\"])
-        vehicle_types = np.array([\"Sedan\", \"SUV\", \"Truck\", \"EV\"])
-        regions = np.array([\"Urban\", \"Suburban\", \"Rural\"])
+        coverage_tiers = np.array(["Basic", "Standard", "Premium"])
+        vehicle_types = np.array(["Sedan", "SUV", "Truck", "EV"])
+        regions = np.array(["Urban", "Suburban", "Rural"])
 
         quote_df = pd.DataFrame(
             {
-                \"driver_age\": rng.integers(21, 76, rows),
-                \"vehicle_age\": rng.integers(0, 16, rows),
-                \"annual_mileage\": rng.integers(6000, 26000, rows),
-                \"accident_count\": rng.choice([0, 1, 2, 3], size=rows, p=[0.62, 0.23, 0.11, 0.04]),
-                \"loyalty_years\": rng.integers(0, 16, rows),
-                \"bundle_home\": rng.integers(0, 2, rows),
-                \"coverage_tier\": rng.choice(coverage_tiers, size=rows, p=[0.3, 0.45, 0.25]),
-                \"vehicle_type\": rng.choice(vehicle_types, size=rows, p=[0.4, 0.3, 0.15, 0.15]),
-                \"region\": rng.choice(regions, size=rows, p=[0.38, 0.42, 0.2]),
+                "driver_age": rng.integers(21, 76, rows),
+                "vehicle_age": rng.integers(0, 16, rows),
+                "annual_mileage": rng.integers(6000, 26000, rows),
+                "accident_count": rng.choice([0, 1, 2, 3], size=rows, p=[0.62, 0.23, 0.11, 0.04]),
+                "loyalty_years": rng.integers(0, 16, rows),
+                "bundle_home": rng.integers(0, 2, rows),
+                "coverage_tier": rng.choice(coverage_tiers, size=rows, p=[0.3, 0.45, 0.25]),
+                "vehicle_type": rng.choice(vehicle_types, size=rows, p=[0.4, 0.3, 0.15, 0.15]),
+                "region": rng.choice(regions, size=rows, p=[0.38, 0.42, 0.2]),
             }
         )
 
-        tier_factor = quote_df[\"coverage_tier\"].map(
-            {\"Basic\": 0.9, \"Standard\": 1.15, \"Premium\": 1.45}
+        tier_factor = quote_df["coverage_tier"].map(
+            {"Basic": 0.9, "Standard": 1.15, "Premium": 1.45}
         )
-        vehicle_factor = quote_df[\"vehicle_type\"].map(
-            {\"Sedan\": 1.0, \"SUV\": 1.12, \"Truck\": 1.18, \"EV\": 1.08}
+        vehicle_factor = quote_df["vehicle_type"].map(
+            {"Sedan": 1.0, "SUV": 1.12, "Truck": 1.18, "EV": 1.08}
         )
-        region_factor = quote_df[\"region\"].map(
-            {\"Urban\": 1.12, \"Suburban\": 1.0, \"Rural\": 0.93}
+        region_factor = quote_df["region"].map(
+            {"Urban": 1.12, "Suburban": 1.0, "Rural": 0.93}
         )
 
-        quote_df[\"base_premium\"] = (
+        quote_df["base_premium"] = (
             520
-            + quote_df[\"vehicle_age\"] * 18
-            + quote_df[\"annual_mileage\"] * 0.014
-            + quote_df[\"accident_count\"] * 185
-            + (75 - quote_df[\"driver_age\"]).clip(lower=0) * 4
+            + quote_df["vehicle_age"] * 18
+            + quote_df["annual_mileage"] * 0.014
+            + quote_df["accident_count"] * 185
+            + (75 - quote_df["driver_age"]).clip(lower=0) * 4
         ) * tier_factor * vehicle_factor * region_factor
-        quote_df[\"base_premium\"] = quote_df[\"base_premium\"].round(0)
+        quote_df["base_premium"] = quote_df["base_premium"].round(0)
 
-        quote_df[\"deductible\"] = rng.choice(
+        quote_df["deductible"] = rng.choice(
             [250, 500, 750, 1000, 1500],
             size=rows,
             p=[0.12, 0.35, 0.18, 0.25, 0.10],
         )
-        quote_df[\"discount_pct\"] = rng.integers(0, 21, rows)
-        quote_df[\"premium_after_discount\"] = (
-            quote_df[\"base_premium\"] * (1 - quote_df[\"discount_pct\"] / 100)
+        quote_df["discount_pct"] = rng.integers(0, 21, rows)
+        quote_df["premium_after_discount"] = (
+            quote_df["base_premium"] * (1 - quote_df["discount_pct"] / 100)
         ).round(0)
-        quote_df[\"price_per_mile\"] = (
-            quote_df[\"premium_after_discount\"] / quote_df[\"annual_mileage\"]
+        quote_df["price_per_mile"] = (
+            quote_df["premium_after_discount"] / quote_df["annual_mileage"]
         ).round(4)
 
         logit = (
             2.4
-            - 0.0019 * quote_df[\"premium_after_discount\"]
-            + 0.0005 * quote_df[\"deductible\"]
-            + 0.05 * quote_df[\"discount_pct\"]
-            + 0.10 * quote_df[\"loyalty_years\"]
-            + 0.45 * quote_df[\"bundle_home\"]
-            - 0.55 * quote_df[\"accident_count\"]
-            - 0.10 * (quote_df[\"coverage_tier\"] == \"Premium\").astype(float)
-            + 0.14 * (quote_df[\"region\"] == \"Rural\").astype(float)
+            - 0.0019 * quote_df["premium_after_discount"]
+            + 0.0005 * quote_df["deductible"]
+            + 0.05 * quote_df["discount_pct"]
+            + 0.10 * quote_df["loyalty_years"]
+            + 0.45 * quote_df["bundle_home"]
+            - 0.55 * quote_df["accident_count"]
+            - 0.10 * (quote_df["coverage_tier"] == "Premium").astype(float)
+            + 0.14 * (quote_df["region"] == "Rural").astype(float)
             + rng.normal(0, 0.55, rows)
         )
         probability = 1 / (1 + np.exp(-logit))
-        quote_df[\"accepted\"] = rng.binomial(1, probability)
+        quote_df["accepted"] = rng.binomial(1, probability)
         return quote_df
+    """Build a one-row insurance quote from the what-if UI inputs.
 
+    Applies the same pricing formula used by make_insurance_dataset so the
+    edited quote is consistent with the historical book of quotes, and can
+    be scored by the trained acceptance model.
+    """
     def build_insurance_quote(
         *,
         driver_age: float,
@@ -1032,15 +1048,10 @@ app._unparsable_cell(
         deductible: float,
         discount_pct: float,
     ) -> pd.DataFrame:
-    \"\"\"Build a one-row insurance quote from the what-if UI inputs.
 
-    Applies the same pricing formula used by make_insurance_dataset so the
-    edited quote is consistent with the historical book of quotes, and can
-    be scored by the trained acceptance model.
-    \"\"\"
-        tier_factor = {\"Basic\": 0.9, \"Standard\": 1.15, \"Premium\": 1.45}[coverage_tier]
-        vehicle_factor = {\"Sedan\": 1.0, \"SUV\": 1.12, \"Truck\": 1.18, \"EV\": 1.08}[vehicle_type]
-        region_factor = {\"Urban\": 1.12, \"Suburban\": 1.0, \"Rural\": 0.93}[region]
+        tier_factor = {"Basic": 0.9, "Standard": 1.15, "Premium": 1.45}[coverage_tier]
+        vehicle_factor = {"Sedan": 1.0, "SUV": 1.12, "Truck": 1.18, "EV": 1.08}[vehicle_type]
+        region_factor = {"Urban": 1.12, "Suburban": 1.0, "Rural": 0.93}[region]
         base_premium = (
             520
             + vehicle_age * 18
@@ -1052,26 +1063,25 @@ app._unparsable_cell(
         return pd.DataFrame(
             [
                 {
-                    \"driver_age\": float(driver_age),
-                    \"vehicle_age\": float(vehicle_age),
-                    \"annual_mileage\": float(annual_mileage),
-                    \"accident_count\": float(accident_count),
-                    \"loyalty_years\": float(loyalty_years),
-                    \"bundle_home\": int(bundle_home),
-                    \"coverage_tier\": coverage_tier,
-                    \"vehicle_type\": vehicle_type,
-                    \"region\": region,
-                    \"base_premium\": round(base_premium, 0),
-                    \"deductible\": float(deductible),
-                    \"discount_pct\": float(discount_pct),
-                    \"premium_after_discount\": round(premium_after_discount, 0),
-                    \"price_per_mile\": round(premium_after_discount / annual_mileage, 4),
+                    "driver_age": float(driver_age),
+                    "vehicle_age": float(vehicle_age),
+                    "annual_mileage": float(annual_mileage),
+                    "accident_count": float(accident_count),
+                    "loyalty_years": float(loyalty_years),
+                    "bundle_home": int(bundle_home),
+                    "coverage_tier": coverage_tier,
+                    "vehicle_type": vehicle_type,
+                    "region": region,
+                    "base_premium": round(base_premium, 0),
+                    "deductible": float(deductible),
+                    "discount_pct": float(discount_pct),
+                    "premium_after_discount": round(premium_after_discount, 0),
+                    "price_per_mile": round(premium_after_discount / annual_mileage, 4),
                 }
             ]
         )
-    """,
-    name="_"
-)
+
+    return build_insurance_quote, make_insurance_dataset
 
 
 @app.cell
