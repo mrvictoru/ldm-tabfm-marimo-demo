@@ -2,4 +2,4 @@ marimo>=0.13
 numpy>=1.26
 pandas>=2.2
 scikit-learn>=1.5
-tabfm[pytorch]
+tabfm[pytorch]>=1.0.1

@@ -1,4 +1,4 @@
-﻿
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -572,7 +572,7 @@
           </div>
           <div class="meta-line"># historical records become intelligence · the model answers questions at decision time · not just at reporting time</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"IBM's Large Database Models idea is a shift from dashboards that describe the past to systems that actively assist a decision in the present. Traditional analytics answers: what happened, how many, where did performance change. LDM-style analytics answers in the moment: how risky or promising is this new case, what similar cases have we seen, what if we try a different input. The key reframe is that historical records are not just storage - they are intelligence the system can surface at decision time. In fraud that might mean flagging a suspicious pattern; in insurance a different deductible; in retail a healthier alternative."</div>
+        <div class="notes"><span class="n-label">speaker note</span>"IBM's Large Database Models idea is a shift from dashboards that describe the past to systems that actively assist a decision in the present. The insurance example makes this concrete: estimate whether a customer will accept a quote, retrieve similar prior quotes, then change the deductible or discount and recalculate."</div>
       </section>
 
       <!-- 03 LDM-style Mapping -->
@@ -596,11 +596,11 @@
               <div class="meta-line" style="margin-top: 18px;"># demonstrating the same business interaction pattern with tools we can access today</div>
             </div>
             <div class="steps">
-              <div class="step"><span class="tag g">01</span><span>fraud triage - score a new transaction, surface suspicious patterns</span></div>
-              <div class="step"><span class="tag g">02</span><span>what-if analysis - change attributes, instantly recalculate the signal</span></div>
-              <div class="step"><span class="tag g">03</span><span>similar historical cases - comparable prior examples, more context</span></div>
-              <div class="step"><span class="tag g">04</span><span>insurance quote optimization - estimate likelihood of acceptance</span></div>
-              <div class="step"><span class="tag g">05</span><span>retail alternatives - similar intent, better health profile</span></div>
+              <div class="step"><span class="tag g">01</span><span>enter a candidate insurance quote</span></div>
+              <div class="step"><span class="tag g">02</span><span>estimate likelihood of customer acceptance</span></div>
+              <div class="step"><span class="tag g">03</span><span>retrieve similar historical quotes and outcomes</span></div>
+              <div class="step"><span class="tag g">04</span><span>change the deductible or discount and recalculate</span></div>
+              <div class="step"><span class="tag g">05</span><span>validate TabFM on held-out rows before trusting the score</span></div>
             </div>
           </div>
         </div>
@@ -619,17 +619,17 @@
           <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--model tabfm</span> <span class="cursor"></span></div>
           <h2 class="h2">ROWS, COLUMNS, ATTRIBUTES.<br />NOT ESSAYS.</h2>
           <div class="split">
-           <pre class="code"><span class="c"># train a TabFM classifier from historical transaction rows</span>
+           <pre class="code"><span class="c"># supply 100 historical quotes as in-context examples</span>
 tabfm_model = tabfm_v1_0_0.load(model_type=<span class="s">"classification"</span>)
 classifier = <span class="v">TabFMClassifier</span>(model=tabfm_model)
 classifier.fit(X_context, y_context.to_numpy())
  
-<span class="c"># score a hold-out row and keep the positive-class probability</span>
+<span class="c"># evaluate unseen quotes before using the interactive score</span>
 test_probabilities = classifier.predict_proba(X_test)
-fraud_scores = pd.Series(
+acceptance_scores = pd.Series(
     test_probabilities[:, positive_index],
     index=X_test.index,
-    name=<span class="s">"tabfm_fraud_probability"</span>,
+    name=<span class="s">"tabfm_acceptance_probability"</span>,
 )</pre>
            <div class="steps">
              <div class="step"><span class="tag g">PRETRAINED</span><span>foundation model built for structured data - not text</span></div>
@@ -639,7 +639,7 @@ fraud_scores = pd.Series(
            </div>
          </div>
        </div>
-       <div class="notes"><span class="n-label">speaker note</span>"A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is built for that kind of data. In the notebook, the model is loaded from the public TabFM checkpoint and fit on a small historical context set before it is asked to score new transactions."</div>
+       <div class="notes"><span class="n-label">speaker note</span>"TabFM is built for rows, columns, and mixed tabular features. Its fit call prepares the table and provides labeled quotes as context; it does not update the pretrained weights. The key discipline is to evaluate unseen quotes before interpreting any live probability."</div>
      </section>
 
       <!-- 05 Feature Engineering -->
@@ -669,14 +669,14 @@ fraud_scores = pd.Series(
               <div class="panel-text">&gt; prototype business value earlier</div>
             </div>
           </div>
-          <div class="meta-line"><span class="ok-tag">✓ reduced manual feature engineering</span> - not zero · the demo still adds a few simple derived fields: balance deltas, error measures</div>
+          <div class="meta-line"><span class="ok-tag">✓ reduced model training work</span> - not zero data work · the demo still defines quote fields, evaluation, and guardrails</div>
           <div class="meta-line"># domain knowledge does not disappear · more intelligence comes from model + historical data</div>
         </div>
         <div class="notes"><span class="n-label">speaker note</span>"Traditionally, getting from database rows to a useful predictive workflow requires a lot of data-science work: choosing features, engineering transformations, training custom models, iterating many times. The LDM idea is attractive because it promises to reduce that custom effort significantly. The right claim is not 'no data-science work is needed.' The right claim is 'the amount of custom work needed to reach a useful prototype can be much lower.'"</div>
       </section>
 
-     <!-- 06 Fraud Triage -->
-     <section class="slide" data-screen-label="06 Fraud Triage">
+     <!-- 06 Quote Optimization -->
+     <section class="slide" data-screen-label="06 Quote Optimization">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
@@ -684,41 +684,39 @@ fraud_scores = pd.Series(
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> marimo <span class="flag">run</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="flag">--case fraud_triage --trace</span> <span class="cursor"></span></div>
-          <h2 class="h2">SCORE A NEW CASE.<br />SHOW WHY. LET THEM TEST.</h2>
+          <div class="cmdline"><span class="p">$</span> molab <span class="flag">open</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="cursor"></span></div>
+          <h2 class="h2">ENTER A QUOTE.<br />COMPARE TERMS. RECALCULATE.</h2>
           <div class="split">
-           <pre class="code"><span class="c"># build a candidate transaction from the interactive controls</span>
-candidate_frame = build_candidate_row(
-    step=step_value.value,
-    txn_type=transaction_type.value,
-    amount=amount_value.value,
-    oldbalance_org=oldbalance_org_value.value,
-    oldbalance_dest=oldbalance_dest_value.value,
-    origin_updates_normally=origin_updates_normally.value,
-    dest_updates_normally=dest_updates_normally.value,
+           <pre class="code"><span class="c"># build a quote from the interactive controls</span>
+candidate_quote = build_quote(
+    coverage_tier=coverage.value,
+    deductible=deductible.value,
+    discount_pct=discount_pct.value,
+    customer_age=customer_age.value,
+    vehicle_type=vehicle.value,
 )
- 
-<span class="c"># score the new row using the trained TabFM classifier</span>
-candidate_features = candidate_frame[feature_columns]
+
+<span class="c"># score it only after the held-out evidence gate</span>
 candidate_probability = float(
-    classifier.predict_proba(candidate_features)[0][positive_index]
+    classifier.predict_proba(candidate_quote[feature_columns])[0, positive_index]
 )</pre>
-           <pre class="code"><span class="c"># find the closest historical rows to compare with the new case</span>
-candidate_similarity = similarity_preprocessor.transform(candidate_features)
-_, neighbor_positions = similarity_index.kneighbors(candidate_similarity)
-similar_cases = modeling_df.iloc[neighbor_positions[0]].copy()
-similar_cases[<span class="s">"tabfm_demo_distance_rank"</span>] = range(1, len(similar_cases) + 1)
- 
-<span class="c"># example result summary</span>
-current_flag = int(candidate_frame.loc[0, <span class="s">"isFlaggedFraud"</span>])</pre>
+           <pre class="code"><span class="c"># compare alternative commercial terms</span>
+scenario_quotes[<span class="s">"acceptance_probability"</span>] = (
+    classifier.predict_proba(
+        scenario_quotes[feature_columns]
+    )[:, positive_index]
+)
+
+<span class="c"># retrieval is a separate, explicit component</span>
+similar_quotes = quote_history.iloc[neighbor_positions]</pre>
           </div>
          <div class="tags-row">
-           <span class="tag g">TRIAGE</span>
+           <span class="tag g">QUOTE ACCEPTANCE</span>
            <span class="tag a">WHAT-IF</span>
            <span class="tag g">SIMILAR RETRIEVAL</span>
          </div>
        </div>
-       <div class="notes"><span class="n-label">speaker note</span>"This is where the concept becomes operational. The notebook takes the edited values from the marimo controls, builds a new transaction row, scores it with TabFM, and then retrieves the closest historical examples. That makes the result easier to trust, because the user is not seeing a score in isolation - they can compare it against similar past cases and adjust the inputs in real time."</div>
+       <div class="notes"><span class="n-label">speaker note</span>"This directly recreates IBM's insurance example: enter a quote, estimate acceptance, inspect similar historical quotes, and change deductible or discount terms. The notebook first requires held-out evidence so a probability is not confused with proof that the model works."</div>
      </section>
 
       <!-- 07 Technical Summary -->
@@ -746,7 +744,7 @@ signal + neighbors + scenario change</pre>
               <div class="step"><span class="tag g">02</span><span>score a live case against learned patterns in structured data</span></div>
               <div class="step"><span class="tag g">03</span><span>retrieve similar prior cases so the output has concrete context</span></div>
               <div class="step"><span class="tag g">04</span><span>edit inputs and rerun immediately for what-if analysis</span></div>
-              <div class="step"><span class="tag a">05</span><span>apply the same pattern to fraud, underwriting, pricing, or recommendation workflows</span></div>
+              <div class="step"><span class="tag a">05</span><span>show held-out evidence and uncertainty before trusting the live score</span></div>
             </div>
           </div>
           <div class="meta-line"># in this prototype, TabFM provides the tabular scoring and a helper retrieval layer provides similar-case lookup</div>
@@ -885,5 +883,3 @@ signal + neighbors + scenario change</pre>
   </script>
 </body>
 </html>
-
-

@@ -1,899 +1,371 @@
-# Speaker notes for the LDM-style TabFM demo
+# Speaker notes: recreating IBM's LDM quote workflow with TabFM
 
-This document is meant to support a presentation, not just a notebook walkthrough. The goal is to help you explain **why this matters for analytics teams**, **how it connects to the IBM LDM concept**, and **why a pretrained tabular foundation model like TabFM is a practical way to demonstrate that idea today**.
+## 1. The short version
 
----
+Use this as the opening:
 
-## 1. Core presentation message
+> "IBM's article describes a system that uses historical insurance quotes to
+> estimate whether a customer will accept a new quote, retrieve similar prior
+> cases, and recalculate the odds when a salesperson changes the deductible or
+> discount. This notebook recreates that interaction pattern with Google's
+> pretrained TabFM model."
 
-If you want one clear message for the audience, use this:
+Then state the boundary:
 
-> "This demo shows that we can turn historical business data into an interactive decision-support system. Instead of only reporting the past, we can score a new case, compare it with similar historical cases, and test possible changes before making a decision."
+> "This is an independent recreation. I am not claiming that IBM SQL Data
+> Insights uses TabFM, or even that it uses the same model architecture. My
+> hypothesis is that a zero-shot tabular foundation model is a plausible way to
+> implement the kind of workflow IBM describes, and this demo tests that idea."
 
-That is the main value proposition.
-
-For this audience, the important idea is not "we used Python."  
-The important idea is:
-
-- analytics can become interactive,
-- historical data can become operational,
-- and pretrained tabular AI can help smaller teams build advanced decision tools faster.
-
----
-
-## 2. How to frame the IBM article
-
-The IBM article describes **large database models (LDMs)** as systems that help users work directly with enterprise data in a smarter, more decision-oriented way.
-
-The key ideas from the article that matter for this presentation are:
-
-1. **Use historical records as intelligence, not just storage**  
-   The database is not only where data sits. It becomes the source of examples, patterns, and comparisons.
-
-2. **Evaluate a current case against historical context**  
-   Instead of analyzing after the fact, the user can ask: "What is the likely outcome of this case right now?"
-
-3. **Support scenario exploration**  
-   A user can try alternative inputs and see how the outcome changes. In other words, the system helps with what-if thinking rather than only retrospective analysis.
-
-4. **Bring back similar prior cases**  
-   The system helps the user understand the current case in context.
-
-5. **Move faster from idea to business value**  
-   One of the most compelling points in the article is speed: teams can operationalize historical data more quickly.
-
-When you present, say this plainly:
-
-> "What IBM is pointing toward is a shift from dashboards that describe the past to systems that actively assist a decision in the present."
+That distinction is essential. IBM's public article explains the product behavior
+and business result, but it does not identify TabFM as its underlying model.
 
 ---
 
-## 3. How our notebook maps to the LDM idea
+## 2. What IBM's article actually describes
 
-Be precise here. Do not claim that the notebook is literally IBM's LDM system.
+The strongest concrete example in the IBM article is Swiss Mobiliar's insurance
+quote workflow:
 
-A good way to say it:
+1. A salesperson enters a candidate automobile insurance quote.
+2. The system finds similar previous cases.
+3. It estimates the probability that the customer will accept the quote.
+4. The salesperson changes terms such as the deductible or discount.
+5. The system recalculates the acceptance odds.
+6. The salesperson uses those comparisons to choose a more tailored quote.
 
-> "This notebook is an LDM-style demonstration. It recreates the business functions described in the article using a pretrained tabular model, interactive controls, and historical-case retrieval."
+IBM reports that the production system used approximately 15 million historical
+quote records with several dozen attributes. IBM also reports a 7% improvement in
+the closing rate over six months.
 
-What we reproduced:
+Do not imply that this notebook reproduces that scale or result. The notebook
+reproduces the **decision-time loop**:
 
-- **Fraud / anomaly triage**  
-  Score a new transaction and surface suspicious patterns.
+> current case -> predicted outcome -> similar cases -> alternative terms ->
+> recalculated outcome
 
-- **Scenario exploration**  
-  Change transaction attributes and instantly recalculate the signal.
-
-- **Similar historical cases**  
-  Show comparable prior examples to support investigation.
-
-- **Insurance quote optimization**  
-  Change pricing-related inputs and estimate likelihood of acceptance.
-
-- **Retail healthier-alternative recommendations**  
-  Find similar products with a better health profile.
-
-This is the key bridge statement:
-
-> "The notebook is not trying to replicate IBM's product architecture. It is demonstrating the same business interaction pattern with tools we can access today."
+That is the LDM-style interaction pattern we are demonstrating.
 
 ---
 
-## 4. Why TabFM matters in this story
+## 3. Why TabFM is relevant
 
-This section is important because it explains why the demo is more than a toy.
+Google describes TabFM as a foundation model for classification and regression on
+tabular data. It supports mixed numerical and categorical columns and uses
+in-context learning.
 
-TabFM matters because:
+The important technical distinction:
 
-- it is a **pretrained foundation model for tabular data**,
-- it reduces the need to build everything from scratch,
-- it reduces how much manual model-building work has to happen before a team can start testing value,
-- it is a credible example of how foundation-model thinking applies beyond text,
-- and it helps show that advanced analytics can become more accessible even when local talent or ML infrastructure is limited.
+> "`TabFMClassifier.fit()` does not train new model weights for this insurance
+> dataset. It prepares the columns and supplies labeled historical rows as context
+> to the pretrained model. Predictions are produced without task-specific
+> fine-tuning or hyperparameter search."
 
-Suggested wording:
+This aligns with the part of the LDM vision concerned with moving rapidly from a
+historical table to a predictive workflow. It does **not** mean that evaluation,
+data quality, governance, or domain expertise disappear.
 
-> "A lot of AI discussion is dominated by text models. But many business decisions are not made from essays or chat logs. They are made from rows, columns, attributes, and historical records. TabFM is interesting because it is built for that kind of data."
-
-You can also make the strategic point:
-
-> "For teams in markets where deep ML specialization is still limited, pretrained tabular models are promising because they lower the barrier to building decision-support systems from structured business data."
-
----
-
-## 5. The feature-engineering angle: why this is appealing
-
-This is one of the strongest ideas to surface in the presentation.
-
-Part of the appeal of the LDM vision is that it promises to reduce some of the traditional handwork usually associated with data-science projects:
-
-- manual feature engineering,
-- repeated feature extraction pipelines,
-- custom model selection for every use case,
-- and long delays between "we have the data" and "we have a usable decision tool."
-
-That does **not** mean domain knowledge disappears. It means more of the intelligence can come from the model plus the historical data, rather than from months of bespoke feature crafting.
-
-Suggested wording:
-
-> "Traditionally, getting from database rows to a useful predictive workflow often requires a lot of data-science work: choosing features, engineering transformations, training custom models, and iterating many times."
-
-Then:
-
-> "What makes the LDM idea attractive is the possibility of skipping much of that custom effort, or at least reducing it significantly, by using a model designed to work directly with structured historical data."
-
-### How honest we should be about this demo
-
-Our notebook **partly** demonstrates that idea, but not perfectly.
-
-It shows the promise because:
-
-- we use a pretrained tabular model rather than building a bespoke model architecture from zero,
-- we keep the workflow relatively close to the original transaction columns,
-- and we get a working decision-support experience without a heavy, enterprise-scale feature platform.
-
-But we should also acknowledge:
-
-- the demo still adds a few simple derived fields, such as balance deltas and error measures,
-- those fields are there to make the example clearer and stronger,
-- so this is better described as **reduced manual feature engineering**, not **zero feature engineering**.
-
-The best presentation line is:
-
-> "This demo does not eliminate feature engineering entirely, but it does show the direction: less handcrafted modeling work, faster prototyping, and more value coming directly from structured historical data plus a pretrained tabular model."
+Google's published TabFM weights are non-commercial. This prototype is for
+technical demonstration and evaluation, not deployment.
 
 ---
 
-## 6. How to close the deck
+## 4. What changed from the earlier version
 
-The last slide should feel like a **technical summary**, not a product pitch.
+The earlier notebook led with fraud detection. Its holdout ROC AUC was 0.467 and
+its average precision was approximately equal to fraud prevalence. Those results
+did not demonstrate a useful TabFM signal. A probability appearing in the UI was
+therefore easy to mistake for evidence that the model worked.
 
-The main point to land is:
+The rewritten notebook:
 
-### An LDM-style system turns structured historical data into an interactive workflow
+- uses IBM's primary insurance example instead of an indirect fraud example,
+- evaluates TabFM before presenting its current-case score,
+- compares it with a no-skill class-prior baseline,
+- compares it with an untuned logistic regression using the same 100 rows,
+- includes a bootstrap confidence interval for ROC AUC,
+- labels the run as a pass or "not established,"
+- separates TabFM scoring from nearest-neighbor retrieval,
+- and clearly marks the historical quote data as synthetic.
 
-Instead of ending with a dashboard or a static prediction, the system can:
-
-1. take a **live business case** as input,
-2. compare it against **historical rows**,
-3. produce a **score or signal**,
-4. retrieve **similar prior cases** for context,
-5. and let the user run **what-if edits** before acting.
-
-That is the mechanism.
-
-For this audience, say it plainly:
-
-> "The interesting part is not just that a model gives a score. The interesting part is that historical data becomes operational context. A user can bring a new case, compare it with similar past records, test changes, and make a better-informed decision in the same workflow."
-
-That maps well to the IBM article and the IBM video because both emphasize:
-
-- structured rows and columns as the core data asset,
-- similarity and retrieval over historical records,
-- live scoring of a current case,
-- and scenario exploration before action.
-
-### How to explain our specific demo honestly
-
-Be explicit that our prototype is built from three parts:
-
-1. **TabFM** for tabular pattern recognition and scoring,
-2. a **helper retrieval layer** for similar-case lookup,
-3. **marimo** for the interactive what-if interface.
-
-Suggested wording:
-
-> "In this demo, TabFM handles the tabular scoring, a retrieval layer brings back comparable historical cases, and marimo provides the interface for interactive scenario testing."
-
-Then add the business interpretation:
-
-> "That combination is what makes the workflow useful. The analyst is not staring at an unexplained score. They can inspect comparable cases and test changes before deciding."
+The presentation should never skip the evidence gate.
 
 ---
 
-## 7. Best positioning for this audience
+## 5. How to explain the synthetic data
 
-Your audience is in data analytics, but may not have deep machine-learning experience. So the tone should be:
+IBM's 15 million quote records are proprietary, so this repository cannot use
+them. The notebook creates a reproducible table with realistic-looking fields:
 
-- technical enough to feel credible,
-- practical enough to feel achievable,
-- and honest about what is automated versus what is still engineered.
+- customer and vehicle attributes,
+- prior claims and customer tenure,
+- coverage tier and region,
+- reference and quoted premiums,
+- deductible and discount,
+- and whether the quote was accepted.
 
-Avoid sounding like you are selling a platform.
+The accepted/rejected outcome comes from a hidden nonlinear and noisy process.
+TabFM is not given that formula. It sees only labeled examples and must recover a
+pattern that generalizes to held-out rows.
 
-Avoid phrases that overclaim, such as:
+Say:
 
-- "this changes everything,"
-- "fully replaces data scientists,"
-- or "no feature engineering is needed."
+> "Synthetic data lets us test the mechanics reproducibly, but it is not evidence
+> of performance on real customers. The credible next step is to replace this
+> generator with an approved historical quote table and rerun the same evaluation."
 
-Better framing:
-
-> "This is a credible prototype of a new analytics workflow. It shows how a pretrained tabular model, historical record retrieval, and an interactive UI can be combined to support live decisions."
-
-And:
-
-> "The value is not magic automation. The value is that more of the pattern-recognition work can come from the model plus historical data, so teams can prototype decision-support workflows faster."
+Do not describe synthetic results as proof of ROI, production readiness, or
+insurance-domain accuracy.
 
 ---
 
-## 8. Suggested opening talk track
+## 6. The evidence gate
 
-You can use something close to this at the start:
+The benchmark table includes three signals:
 
-> "Most analytics teams today are very good at showing what already happened. Dashboards, reports, summaries, trends. Those are valuable, but they usually stop short of helping a user decide what to do in a live case."
->
-> "What interested me about the IBM LDM article is that it describes a different pattern: use historical database records to actively support a decision while the user is making it."
->
-> "This demo is my attempt to recreate that pattern in a practical way using a pretrained tabular foundation model called TabFM and an interactive marimo notebook."
->
-> "What makes this especially interesting is that we can do this without building a completely custom ML stack from scratch. That is where pretrained tabular models become very relevant."
->
-> "The point is not that this notebook is a production platform. The point is that the interaction model is powerful: score a case, compare it to similar past cases, and test possible changes immediately."
+1. **TabFM** using 100 labeled context rows without weight updates.
+2. **Untuned logistic regression** trained on the same 100 rows.
+3. **Class-prior baseline**, which assigns everyone the same probability.
+
+### ROC AUC
+
+ROC AUC asks whether accepted quotes tend to receive higher scores than rejected
+quotes across possible thresholds.
+
+- `1.0`: perfect ranking
+- `0.5`: random ranking
+- below `0.5`: worse than random ranking
+
+The notebook also reports a bootstrap 95% interval. Its evidence gate requires the
+lower end of that interval to exceed `0.5`. This is intentionally stricter than
+celebrating one point estimate above chance.
+
+### Average precision
+
+Average precision focuses on the precision-recall trade-off and must be compared
+with the positive-class prevalence.
+
+For example, if 40% of held-out quotes are accepted:
+
+- an average precision near `0.40` is roughly no-skill,
+- `0.60` is meaningful lift,
+- and the notebook reports the ratio as AP lift over prevalence.
+
+### How to present the verdict
+
+If the notebook says:
+
+> **PASS: held-out TabFM signal demonstrated**
+
+you may say:
+
+> "On this synthetic held-out set, TabFM learned a ranking signal from 100 context
+> rows without dataset-specific weight training."
+
+If it says:
+
+> **NOT ESTABLISHED**
+
+say:
+
+> "The workflow runs, but this execution did not establish useful predictive
+> performance. We should not interpret the individual probabilities as reliable."
+
+Do not hide or talk around a failed gate.
 
 ---
 
-## 9. Cell-by-cell speaker guide
+## 7. Why show logistic regression
 
-Use this while walking through the notebook.
+The conventional baseline prevents the demo from implying that any non-random
+score makes TabFM special.
 
-### Notebook framing cells
+Both models receive the same 100 labeled rows:
 
-Use the first three markdown sections as your setup story before you go step by step.
+- TabFM supplies them as context to a pretrained foundation model.
+- Logistic regression estimates task-specific coefficients from those rows.
 
-Code snippet:
+Possible interpretations:
 
-```python
-mo.md("""
-# LDM-style fraud triage with TabFM
-...
-- **Risk scoring:** predict fraud probability for a transaction
-- **What-if analysis:** change transaction attributes and recompute the score
-- **Similar prior cases:** retrieve the closest historical transactions
-""")
-```
+- **TabFM beats logistic regression:** strong evidence of useful zero-shot
+  performance on this synthetic task.
+- **They are within 0.03 ROC AUC:** the notebook labels TabFM competitive. This
+  demonstrates comparable ranking with less task-specific model setup, not
+  predictive superiority.
+- **Logistic regression is clearly better:** TabFM is not the best model for this
+  task as configured. The LDM-style UI remains valid, but the TabFM value claim is
+  weak.
+- **Neither beats no-skill:** the run demonstrates only the interface.
 
-Say:
-
-> "Before we get into the mechanics, the notebook tells the audience exactly what this is: an LDM-style workflow with scoring, what-if analysis, and similar-case retrieval."
-
-What to emphasize:
-
-- The notebook is organized around business interactions, not just model training.
-- The "How this maps to the IBM article" table is useful for setting expectations early.
-- The "How to read the outputs" section helps you define what the fraud score and rule-based flags mean before the live interaction starts.
-
-### Step 1: Load the notebook tools
-
-Code snippet:
-
-```python
-import marimo as mo
-import numpy as np
-import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.metrics import average_precision_score, roc_auc_score
-from tabfm import TabFMClassifier, tabfm_v1_0_0_pytorch as tabfm_v1_0_0
-```
-
-Say:
-
-> "This is only setup. We load the notebook, data, modeling, and similarity tools. The point is not the imports themselves, but the workflow they enable."
-
-What to emphasize:
-
-- Move quickly here.
-- The important idea is that one notebook combines UI, modeling, and retrieval.
-
-### Step 2: Load a sample of transaction data
-
-Code snippet:
-
-```python
-DATA_URL = (
-    "https://huggingface.co/datasets/"
-    "CiferAI/Cifer-Fraud-Detection-Dataset-AF/resolve/main/"
-    "Cifer-Fraud-Detection-Dataset-AF-part-1-14.csv"
-)
-RAW_COLUMNS = [
-    "step", "type", "amount", "oldbalanceOrg", "newbalanceOrig",
-    "oldbalanceDest", "newbalanceDest", "isFraud", "isFlaggedFraud",
-]
-```
-
-Say:
-
-> "Here we point to the public fraud dataset and define the transaction columns we want to work with."
-
-Then add:
-
-> "In a real enterprise implementation, this would be your own historical case table."
-
-What to emphasize:
-
-- Historical rows are the raw material.
-- The demo starts from structured business data, not unstructured text.
-
-### Step 2 continued: enrich the transactions and build the what-if row logic
-
-Code snippet:
-
-```python
-def _enrich_transactions(frame: pd.DataFrame) -> pd.DataFrame:
-    enriched["hour_of_day"] = enriched["step"] % 24
-    enriched["origin_delta"] = enriched["oldbalanceOrg"] - enriched["newbalanceOrig"]
-    enriched["dest_delta"] = enriched["newbalanceDest"] - enriched["oldbalanceDest"]
-    enriched["origin_balance_error"] = (enriched["origin_delta"] - enriched["amount"]).abs()
-    enriched["dest_balance_error"] = (enriched["dest_delta"] - enriched["amount"]).abs()
-    enriched["log_amount"] = np.log1p(enriched["amount"])
-```
-
-Say:
-
-> "This is the small amount of feature engineering in the demo. We create a few fields that capture whether the balance movement looks normal or suspicious."
-
-Then add:
-
-> "So the honest claim is not zero feature engineering. The honest claim is much less bespoke work than a traditional end-to-end modeling project."
-
-What to emphasize:
-
-- This is transparent, simple analytics engineering.
-- The balance error fields are especially useful because they capture suspicious money-movement patterns.
-
-### Step 2 continued: stream a balanced interactive sample
-
-Code snippet:
-
-```python
-@functools.lru_cache(maxsize=1)
-def load_cifer_sample(
-    normal_rows: int = 2400,
-    fraud_rows: int = 300,
-    chunk_size: int = 150_000,
-    random_state: int = 42,
-) -> pd.DataFrame:
-```
-
-Say:
-
-> "The notebook does not load the entire dataset. It streams the file in chunks and keeps a manageable interactive sample so the demo stays usable."
-
-What to emphasize:
-
-- This is a demo design decision, not a conceptual limitation.
-- The sample still gives enough history for scoring and retrieval.
-
-### Step 3: Create the working dataset for the demo
-
-Code snippet:
-
-```python
-modeling_df = load_cifer_sample()
-```
-
-Say:
-
-> "This gives us the working historical transaction table for the notebook. Think of it as the case history the model and retrieval layer can learn from."
-
-What to emphasize:
-
-- This is the historical memory of the workflow.
-- Everything later depends on this table.
-
-### Debug preview cell right after Step 3
-
-Code snippet:
-
-```python
-print("Loaded dataframe columns:")
-print(modeling_df.columns.tolist())
-print("\nTop 5 rows:")
-print(modeling_df.head(5).to_string(index=False))
-```
-
-Say:
-
-> "This is just a quick inspection cell so we can confirm the dataset loaded correctly."
-
-What to emphasize:
-
-- You can scroll past this quickly in a presentation.
-- It is useful as a sanity check, not as a main storytelling moment.
-
-### Step 4: Review the sample statistics
-
-Code snippet:
-
-```python
-fraud_rate = modeling_df["isFraud"].mean()
-flagged_rate = modeling_df["isFlaggedFraud"].mean()
-```
-
-Say:
-
-> "This gives us a quick profile of the sample: how much fraud is in it, and how often the built-in rule flag would trigger."
-
-What to emphasize:
-
-- This grounds the audience in the data mix.
-- It also helps distinguish the simple rule flag from the learned model score.
-
-### Step 5: Choose the features the model will use
-
-Code snippet:
-
-```python
-feature_columns = [
-    "step", "hour_of_day", "type", "amount", "log_amount",
-    "oldbalanceOrg", "newbalanceOrig", "oldbalanceDest", "newbalanceDest",
-    "isFlaggedFraud", "origin_delta", "dest_delta",
-    "origin_balance_error", "dest_balance_error",
-]
-```
-
-Say:
-
-> "This cell defines the transaction attributes the model will consider when deciding whether a case looks fraud-like."
-
-What to emphasize:
-
-- These are still close to the original business columns.
-- This is part of the reduced manual feature-engineering story.
-
-### Step 6: Train the fraud-risk model and test it on held-out data
-
-Code snippet:
-
-```python
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, stratify=y, random_state=42
-)
-tabfm_model = tabfm_v1_0_0.load(model_type="classification")
-classifier = TabFMClassifier(model=tabfm_model)
-classifier.fit(X_context, y_context.to_numpy())
-```
-
-Say:
-
-> "This is where TabFM learns from historical examples and turns those rows into a predictive fraud signal."
-
-Then add:
-
-> "The notebook also tries to make the context rows more representative by stratifying and matching the real fraud ratio, instead of feeding the model a simplistic random slice."
-
-What to emphasize:
-
-- Prediction is one component of the overall workflow.
-- The important outcome is a usable signal, not a claim of perfect fraud detection.
-
-### Step 7: Review how well the model performed on a test slice
-
-Code snippet:
-
-```python
-tabfm_auc = roc_auc_score(y_test, fraud_scores)
-tabfm_ap = average_precision_score(y_test, fraud_scores)
-baseline_auc = roc_auc_score(y_test, baseline_scores)
-baseline_ap = average_precision_score(y_test, baseline_scores)
-```
-
-Say:
-
-> "These metrics are just a quick sanity check. They show that the model is producing a meaningful signal on held-out data."
-
-What to emphasize:
-
-- Keep this high level unless someone asks for details.
-- The comparison with `isFlaggedFraud` is useful because it shows the notebook is doing more than a simple hard-coded rule.
-
-### Step 8: Build the case-comparison layer
-
-Code snippet:
-
-```python
-similarity_preprocessor = ColumnTransformer(
-    transformers=[
-        ("numeric", StandardScaler(), numeric_columns),
-        ("categorical", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_columns),
-    ]
-)
-similarity_index = NearestNeighbors(metric="euclidean", n_neighbors=8)
-```
-
-Say:
-
-> "This is the retrieval layer. It builds the similarity machinery that lets the notebook find the closest historical transactions for any new case."
-
-What to emphasize:
-
-- This is central to the LDM-style story.
-- The audience should understand that the notebook is not only scoring, but also comparing.
-
-### Step 9: Create the interactive controls
-
-Code snippet:
-
-```python
-transaction_type = mo.ui.dropdown(...)
-step_value = mo.ui.slider(...)
-amount_value = mo.ui.number(...)
-oldbalance_org_value = mo.ui.number(...)
-oldbalance_dest_value = mo.ui.number(...)
-origin_updates_normally = mo.ui.switch(...)
-dest_updates_normally = mo.ui.switch(...)
-```
-
-Say:
-
-> "This is where the workflow becomes operational. A user can directly edit the live case instead of passively looking at a report."
-
-What to emphasize:
-
-- This is the shift from analytics to decision support.
-- Ask the audience to imagine a fraud desk, underwriting screen, or triage console.
-
-### Step 10: Arrange the controls in one place
-
-Code snippet:
-
-```python
-controls = mo.vstack(
-    [
-        mo.md("## Interactive what-if controls"),
-        transaction_type,
-        step_value,
-        amount_value,
-        oldbalance_org_value,
-        oldbalance_dest_value,
-        origin_updates_normally,
-        dest_updates_normally,
-    ]
-)
-```
-
-Say:
-
-> "This cell is simple, but it matters for usability. It puts the editable inputs into one clean control panel."
-
-What to emphasize:
-
-- The UI matters because the point is human decision support.
-- A good interface is part of making historical data operational.
-
-### Step 11: Score the edited transaction
-
-Code snippet:
-
-```python
-candidate_frame = build_candidate_row(...)
-candidate_features = candidate_frame[feature_columns]
-candidate_probability = float(
-    classifier.predict_proba(candidate_features)[0][positive_index]
-)
-_, neighbor_positions = similarity_index.kneighbors(candidate_similarity)
-similar_cases = modeling_df.iloc[neighbor_positions[0]].copy()
-```
-
-Say:
-
-> "This is the core live workflow: build a candidate case from the UI, score it with TabFM, and immediately pull back similar historical cases."
-
-What to emphasize:
-
-- This is the best place to explain the full loop.
-- Prediction and retrieval happen together, not as separate disconnected tasks.
-
-### Step 12: Show the current risk result
-
-Code snippet:
-
-```python
-- **TabFM fraud probability:** `{candidate_probability:.1%}`
-- **Rule-based flag (`isFlaggedFraud`):** `{current_flag}`
-- **Origin balance error:** `{candidate_frame.loc[0, "origin_balance_error"]:.2f}`
-- **Destination balance error:** `{candidate_frame.loc[0, "dest_balance_error"]:.2f}`
-```
-
-Say:
-
-> "This score is a decision-support signal. Higher means the case looks more similar to past fraud-like cases. It is not an automatic verdict."
-
-What to emphasize:
-
-- Say the model "estimates" or "signals."
-- Use the balance errors and rule flag as lightweight explanation aids.
-
-### Step 13: Show similar past cases
-
-Code snippet:
-
-```python
-similar_cases[["tabfm_demo_distance_rank", *DISPLAY_COLUMNS]]
-```
-
-Say:
-
-> "This is one of the most important parts of the notebook. We are not only returning a score. We are returning comparable historical cases for context."
-
-Then add:
-
-> "That makes the system easier to trust because the analyst is not forced to treat the score as a black box."
-
-What to emphasize:
-
-- Similar-case retrieval is central to the LDM idea.
-- This supports explanation, investigation, and confidence.
-
-### Step 14: Show the context rows passed to TabFM
-
-Code snippet:
-
-```python
-context_preview = modeling_df.loc[X_context.index].copy()
-context_preview["context_label"] = y_context.values
-```
-
-Say:
-
-> "This section makes the in-context learning setup more visible by showing examples the model actually saw as context."
-
-What to emphasize:
-
-- This helps demystify the model.
-- It reinforces that the notebook is grounded in historical examples.
-
-### Insurance extension overview
-
-Start the extension with the notebook heading:
-
-```python
-mo.md("""
-# Future extension 1: insurance quote optimization
-""")
-```
-
-Say:
-
-> "Now the notebook shows that the same interaction pattern can be reused for another business problem: insurance quote optimization."
-
-### Insurance step 1: generate historical quote data
-
-Code snippet:
-
-```python
-def make_insurance_dataset(rows: int = 1200, seed: int = 7) -> pd.DataFrame:
-    ...
-    quote_df["accepted"] = rng.binomial(1, probability)
-```
-
-Say:
-
-> "This synthetic dataset stands in for a historical book of insurance quotes, including customer, vehicle, pricing, and whether the quote was accepted."
-
-What to emphasize:
-
-- This is a synthetic example, but the workflow is realistic.
-- The same structure applies: historical rows, score, what-if edits, similar cases.
-
-### Insurance step 2: fit a quote-acceptance model
-
-Code snippet:
-
-```python
-(
-    insurance_classifier,
-    insurance_positive_index,
-    ...,
-) = fit_tabfm_binary(insurance_X, insurance_y, random_state=19)
-```
-
-Say:
-
-> "This trains a model that estimates the chance a quote will be accepted."
-
-Then add:
-
-> "That matters because now a user can test quote changes before deciding what to offer."
-
-What to emphasize:
-
-- This directly matches one of the strongest IBM examples.
-- The business value is optimization, not just prediction.
-
-### Insurance step 3: edit a quote and rescore it
-
-Code snippet:
-
-```python
-insurance_acceptance_probability = float(
-    insurance_classifier.predict_proba(insurance_candidate_features)[0][
-        insurance_positive_index
-    ]
-)
-```
-
-Say:
-
-> "Here the presenter can change deductible, discount, and other quote details, then immediately see how likely the quote is to be accepted."
-
-What to emphasize:
-
-- This is a live what-if pricing workflow.
-- It is a good example of how historical data can directly support a business decision.
-
-### Retail extension overview
-
-Start this extension with the notebook heading:
-
-```python
-mo.md("""
-# Future extension 2: retail healthier alternatives
-""")
-```
-
-Say:
-
-> "The final section shows the same pattern in a recommendation setting: start from one product, find similar ones, and rank the healthier alternatives."
-
-### Retail step 1: generate a product catalog
-
-Code snippet:
-
-```python
-def make_retail_dataset(rows: int = 420, seed: int = 11) -> pd.DataFrame:
-    ...
-    retail_df["healthy_fit"] = rng.binomial(1, health_probability)
-    retail_df["nutrition_score"] = (...).round(2)
-```
-
-Say:
-
-> "This synthetic catalog gives each product structured attributes like flavor, texture, nutrition, and price, plus a label for whether it tends to be a strong healthier alternative."
-
-What to emphasize:
-
-- Again, the point is the interaction pattern.
-- The data is structured rows and columns, just like the IBM framing.
-
-### Retail step 2: fit the healthier-alternative model
-
-Code snippet:
-
-```python
-(
-    retail_classifier,
-    retail_positive_index,
-    ...,
-) = fit_tabfm_binary(retail_X, retail_y, random_state=23)
-```
-
-Say:
-
-> "This model learns which products look like strong healthier alternatives."
-
-What to emphasize:
-
-- The model score is only one part.
-- Similarity is still needed so the alternatives stay relevant to the shopper's intent.
-
-### Retail step 3: pick a product and rank alternatives
-
-Code snippet:
-
-```python
-healthier_pool["overall_rank_score"] = (
-    health_weight * healthier_pool["healthy_fit_probability"]
-    + (1 - health_weight) * healthier_pool["similarity_score"]
-)
-recommended_products = healthier_pool.sort_values(
-    "overall_rank_score", ascending=False
-).head(6)
-```
-
-Say:
-
-> "This is a nice example of recommendation with a business objective. We are not only finding similar products. We are combining similarity with a health-oriented ranking goal."
-
-What to emphasize:
-
-- Recommendation is not only nearest neighbor search.
-- It can be steered toward healthier, safer, cheaper, or more profitable alternatives depending on the business goal.
+The comparison is intentionally modest. It is not a substitute for tuned boosted
+trees, cross-validation, calibration analysis, or a production benchmark.
 
 ---
 
-## 10. The strongest business points to say out loud
+## 8. The live quote result
 
-If you want to sound strategic and convincing, keep returning to these points:
+The current result shows:
 
-### 1. This is about operationalizing historical data
+- TabFM acceptance probability,
+- the quote's percentile among held-out TabFM scores,
+- historical acceptance prevalence,
+- quoted premium,
+- deductible,
+- and discount.
 
-> "Most companies already have the data. The opportunity is to make that data usable at decision time."
+The percentile is useful because a raw probability can be misread as calibrated.
+For example:
 
-### 2. This is not limited to one domain
+> "This quote is at the 80th percentile of model scores"
 
-> "Any repeated business decision with historical examples is a candidate: fraud, underwriting, pricing, quote acceptance, recommendations, anomaly review, contract review, and more."
+is a ranking statement. It is often safer than:
 
-### 3. This lowers the barrier for analytics teams
+> "This customer has exactly an 80% chance of accepting."
 
-> "Pretrained tabular models mean teams do not always need to build everything from zero to start exploring this capability."
-
-### 4. This can reduce classic data-science bottlenecks
-
-> "One reason this is exciting is that it can reduce how much manual feature engineering and one-off model development is needed before a team can test a useful business workflow."
-
-### 5. This is a bridge from analytics to intelligent applications
-
-> "Instead of analytics ending in a dashboard, analytics can become an interactive system that helps someone act."
+Only describe the score as model-driven evidence if the holdout gate passed.
 
 ---
 
-## 11. What not to overclaim
+## 9. The what-if table
 
-Be confident, but careful.
+The notebook generates alternatives across discounts and deductibles, then asks
+TabFM to rescore them.
 
-Do **not** claim:
+Say:
 
-- that this notebook is a production LDM platform,
-- that TabFM is the same thing as IBM SQL DI,
-- that foundation models remove the need for domain knowledge,
-- that all feature engineering disappears automatically,
-- that synthetic demos prove business ROI,
-- or that the score should replace human judgment.
+> "This is the behavior IBM describes: a salesperson can change commercial terms
+> and immediately compare the modeled acceptance odds before choosing an offer."
 
-Better wording:
+Also state:
 
-> "This is a credible prototype of the interaction pattern."
+> "The highest modeled acceptance probability is not automatically the best
+> business quote. A real solution must include margin, underwriting, fairness,
+> compliance, and customer-treatment constraints."
 
-And:
+Watch whether the results behave sensibly:
 
-> "The value of the demo is that it makes the concept concrete and shows how modern tabular models can support this style of workflow."
+- larger discounts should generally not reduce modeled acceptance,
+- deductible effects may depend on customer and coverage attributes,
+- and repeated or erratic reversals should be treated as a warning.
 
-And, for the feature-engineering topic:
-
-> "The right claim is not 'no data-science work is needed.' The right claim is 'the amount of custom work needed to reach a useful prototype can be much lower.'"
-
----
-
-## 12. Suggested closing talk track
-
-You can close with something like this:
-
-> "What excites me about this space is that it gives analytics teams a path beyond static reporting. With historical structured data, interactive interfaces, and pretrained tabular models, we can start building systems that do not just describe the business, but help guide decisions inside it."
->
-> "And if the model can absorb more of the pattern-recognition work that usually requires heavy feature engineering and custom model design, then smaller teams can participate in this shift much faster."
->
-> "That is the real promise I see in the LDM idea: not only smarter models, but better decision workflows."
+What-if outputs show model sensitivity, not causality. Historical association does
+not prove that changing a term will cause the predicted improvement.
 
 ---
 
-## 13. Short version for slide-design handoff
+## 10. Similar historical quotes
 
-If a design agent or slide builder needs the distilled message, use this:
+The retrieval layer uses standardized Euclidean distance over numeric and
+one-hot-encoded categorical fields.
 
-### Presentation theme
-From dashboards to decision support
+It is deliberately separate from TabFM.
 
-### Problem
-Most analytics work explains the past but does not directly help a user make a live decision.
+Say:
 
-### LDM-style opportunity
-Use historical structured data plus AI to:
-- score a new case,
-- retrieve similar prior cases,
-- and test what-if changes in real time.
+> "TabFM provides the acceptance score. A conventional nearest-neighbor index
+> retrieves similar historical quotes. The notebook combines those components,
+> but it does not pretend that TabFM performs every function."
 
-### Why TabFM
-A pretrained foundation model for tabular data makes this concept faster to prototype, easier to demonstrate, and less dependent on heavy custom model-building.
+The similar rows help a user inspect:
 
-### Feature-engineering message
-The promise is not "no expertise needed."  
-The promise is "less manual feature engineering and less bespoke model work before a team can build a useful prototype."
+- whether comparable cases exist,
+- what terms they received,
+- and whether they accepted.
 
-### Demo proof points
-- Fraud triage
-- Insurance quote optimization
-- Retail healthier-alternative recommendation
+Similarity is contextual evidence, not an explanation of TabFM's internal
+reasoning and not a guarantee of the same outcome.
 
-### Strategic message
-Smaller or less ML-mature markets can still begin building advanced decision-support experiences by combining domain data, interactive tooling, and pretrained tabular models.
+---
+
+## 11. Molab and Chromebook setup
+
+This project is designed to run in Molab's hosted environment. The Chromebook
+only needs a browser; it does not need a local Python installation.
+
+Before presenting:
+
+1. Open the notebook in Molab.
+2. Allow the inline dependencies to install.
+3. Use a hosted GPU runtime if available because the PyTorch checkpoint is large.
+4. Run all cells once so the TabFM weights are downloaded and cached.
+5. Confirm the evidence-gate result.
+6. Exercise the discount and deductible controls.
+7. Keep the Molab tab open and avoid relying on a fresh model download during the
+   live presentation.
+
+The model weights use a non-commercial license, so this is a demonstration rather
+than a commercial deployment.
+
+---
+
+## 12. Suggested presentation flow
+
+### Opening
+
+> "IBM describes an insurance quoting system that turns a historical database
+> into decision support at the moment a salesperson is preparing an offer."
+
+### Hypothesis
+
+> "Google's TabFM suggests a practical way to recreate that interaction pattern:
+> provide examples from a new table as context and make predictions without
+> training task-specific model weights."
+
+### Data boundary
+
+> "IBM's real records are proprietary, so this notebook uses synthetic quote
+> history. It can demonstrate the mechanism, not IBM's production result."
+
+### Evaluation
+
+> "Before showing a probability, we test whether TabFM beats chance on unseen
+> rows, show uncertainty, and compare it with a conventional baseline."
+
+### Live interaction
+
+> "Now we enter a quote, adjust the discount or deductible, recalculate the score,
+> and inspect similar historical cases."
+
+### Close
+
+> "The demo supports the architectural hypothesis if TabFM passes the held-out
+> evidence gate. The business hypothesis still requires representative real data,
+> governance, and a production experiment."
+
+---
+
+## 13. Claims checklist
+
+### Safe claims
+
+- The notebook recreates the interaction pattern described in IBM's article.
+- TabFM is a pretrained foundation model for tabular classification and
+  regression.
+- TabFM uses labeled rows as context without task-specific weight updates.
+- The notebook evaluates held-out ranking before interpreting live scores.
+- The UI combines model scoring, what-if exploration, and separate case retrieval.
+- Molab lets the demo run from a Chromebook without local Python.
+
+### Claims to avoid
+
+- IBM SQL Data Insights is TabFM.
+- IBM necessarily uses a transformer.
+- Synthetic performance proves production insurance performance.
+- A displayed probability is automatically calibrated or useful.
+- Similar-case retrieval explains TabFM.
+- TabFM is better than traditional models without a benchmark.
+- Zero-shot means no examples, no evaluation, or no data work.
+- The public TabFM weights can be used commercially.
+
+---
+
+## 14. Source links
+
+- IBM: <https://www.ibm.com/think/news/meet-large-database-models-ldms>
+- Google Research:
+  <https://research.google/blog/introducing-tabfm-a-zero-shot-foundation-model-for-tabular-data/>
+- TabFM repository: <https://github.com/google-research/tabfm>
+- TabFM PyTorch model card:
+  <https://huggingface.co/google/tabfm-1.0.0-pytorch>
+- Molab guide:
+  <https://github.com/marimo-team/marimo/blob/main/docs/guides/molab.md>
