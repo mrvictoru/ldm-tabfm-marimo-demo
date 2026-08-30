@@ -1,267 +1,308 @@
-# Speaker notes: IBM LDM-style quote workflow with TabFM
+# Speaker notes: Foundation models for tabular data
 
-These notes are organized in the same order as the presentation:
+These notes assume the audience has not read the IBM LDM article and has no
+prior knowledge of TabFM. The presentation first explains the general idea of a
+tabular foundation model, then uses the insurance notebook as a concrete demo.
 
-1. walk through the seven slides,
+The notes are organized in presentation order:
+
+1. walk through the seven introductory slides,
 2. then walk through the notebook cell by cell.
 
-The central story is IBM's insurance example: use historical quotes to estimate
-acceptance, retrieve similar prior quotes, and test different commercial terms
-before choosing an offer.
+IBM's article is background inspiration for the decision-support interaction,
+not a prerequisite for understanding the presentation. It does not disclose
+that IBM uses TabFM or establish IBM's underlying model architecture.
 
 ---
 
 # Part I: Slide-by-slide presentation
 
-## Slide 1: From dashboards to decision support
+## Slide 1: Foundation models for tables
 
 ### What the slide shows
 
-The title introduces the shift from retrospective reporting to an interactive
-decision workflow.
+The title expands the audience's idea of a foundation model beyond language and
+images. It introduces three concepts:
+
+- structured tabular data,
+- a pretrained model,
+- and prediction from labeled context examples.
 
 ### Say
 
-> "Most analytics teams are good at explaining what already happened: dashboards,
-> reports, trends, and summaries. IBM's LDM article describes a different
-> direction: using historical records to help someone decide what to do in a live
-> case."
+> "When people hear foundation model, they usually think about text generation or
+> image generation. But much of an organization's operational data is stored in
+> tables: customers, transactions, insurance quotes, claims, machines, and
+> products."
 
-> "This demo applies that idea to insurance quoting. We enter a candidate quote,
-> estimate the likelihood of acceptance, inspect similar historical quotes, and
-> test alternatives such as a different deductible or discount."
+> "A tabular foundation model is pretrained to recognize patterns across tabular
+> tasks. We can then show it labeled rows from a new table and ask it to predict
+> the outcome for unseen rows."
 
-### Important boundary
-
-> "This is an independent recreation of the interaction pattern. It is not IBM's
-> SQL Data Insights product, and IBM's article does not say that IBM uses TabFM."
+> "Today I will explain how that works, how it differs from training a conventional
+> model for one dataset, what it may be useful for, and what still has to be
+> validated."
 
 ### Transition
 
-> "First, let us make the LDM idea concrete."
+> "First, we need to be clear about what makes a table different from text."
 
 ---
 
-## Slide 2: Report the past or assist the decision?
+## Slide 2: A table is not a block of text
 
 ### What the slide shows
 
-The left side represents traditional analytics:
+The slide defines the basic supervised tabular prediction problem:
 
-- what happened,
-- how many,
-- where did performance change,
-- output: a dashboard.
-
-The right side represents decision-time analytics:
-
-- what does this new case look like,
-- how promising is it,
-- what similar cases exist,
-- what happens if an input changes.
+- one row represents one case,
+- feature columns describe the case,
+- the target column contains the outcome,
+- and the task is to predict that target for an unseen row.
 
 ### Say
 
-> "The distinction is not that dashboards are unhelpful. The distinction is when
-> the analytics becomes useful. A dashboard summarizes history. An LDM-style
-> workflow brings historical intelligence into the moment when a person is
-> preparing a decision."
+> "A table has explicit structure. Each row might be a customer or quote, while
+> each column has a particular meaning: age, mileage, region, vehicle type,
+> premium, and so on."
 
-> "For an insurance salesperson, the question is not only what the portfolio did
-> last month. It is: for this customer and this quote, what acceptance outcome is
-> plausible, what similar quotes have worked, and what if I change the terms?"
+> "Those columns are heterogeneous. Some are continuous numbers, some are
+> categories, some are booleans, and some values may be missing. The model has to
+> reason about their relationships while respecting the row and column structure."
 
-### Explain the histogram
+> "The target is the outcome we want to estimate. A classification target could be
+> accepted versus rejected. A regression target could be cost, demand, or claim
+> severity."
 
-> "The historical records create the reference distribution. The new quote is
-> placed into that context rather than being presented as an isolated number."
+### Simple example
+
+> "If historical rows include quote attributes and an accepted column, an unseen
+> row contains the same quote attributes but no known accepted value. The model's
+> job is to estimate that missing outcome."
 
 ### Transition
 
-> "The next slide separates what we are reproducing from what we are not claiming."
+> "Now let us look at where the foundation-model part enters."
 
 ---
 
-## Slide 3: We reproduced the pattern, not the architecture
+## Slide 3: Pretrain on many tasks, adapt through context
 
 ### What the slide shows
 
-The slide lists the workflow:
+The slide separates two stages:
 
-1. enter a candidate insurance quote,
-2. estimate customer acceptance,
-3. retrieve similar historical quotes,
-4. change the deductible or discount,
-5. validate the score on held-out data.
+1. pretraining, which happens before this notebook and produces reusable model
+   weights;
+2. in-context prediction, where labeled rows from the current table describe
+   the new task.
 
 ### Say
 
-> "The IBM article gives us a business interaction pattern, not enough technical
-> detail to reconstruct IBM's internal architecture. We therefore reproduce the
-> observable workflow with public tools."
+> "The expensive general learning happens during pretraining across many tabular
+> tasks. We then load those existing weights rather than initialize and train a
+> new neural network for our insurance table."
 
-> "TabFM supplies the tabular prediction. A separate nearest-neighbor layer
-> retrieves comparable quotes. Marimo supplies the interactive controls."
+> "For the new task, we provide labeled context rows. Each context row includes
+> the features and the known target. We then provide query rows that have the
+> same feature schema but whose targets we want to predict."
 
-### Be precise about the hypothesis
+> "TabFM uses the context to infer what relationship is being requested and
+> returns predictions for the query rows."
 
-> "The hypothesis is that a zero-shot tabular foundation model is a plausible way
-> to get from a historical table to this kind of decision-support prototype
-> quickly. The notebook tests that hypothesis instead of assuming it."
+### Explain `fit()` carefully
 
-### Do not say
+> "The API uses the familiar method name `fit`, but in this workflow it prepares
+> the table and stores the labeled context. It does not update the pretrained
+> TabFM weights."
 
-- "IBM uses TabFM."
-- "This is IBM SQL Data Insights."
-- "The notebook reproduces IBM's 15 million-row production system."
+This is zero-shot in the **weight-update sense**. It does not mean that the
+model receives no examples: the 100 labeled context rows are essential.
+
+### Important distinction
+
+This is not ordinary few-shot prompting with sentences. The context is a typed
+table with feature columns and labels, and the model was designed for tabular
+prediction.
 
 ### Transition
 
-> "Now let us look at why a tabular foundation model is relevant."
+> "The easiest way to understand the practical difference is to compare the two
+> modeling workflows."
 
 ---
 
-## Slide 4: Rows, columns, attributes—not essays
+## Slide 4: Traditional ML versus the TabFM path
 
 ### What the slide shows
 
-The code loads TabFM, supplies historical quote rows as context, and scores
-unseen rows.
+Both approaches start with data and end with validated predictions, but they
+start the modeling step from different places.
 
 ### Say
 
-> "TabFM is designed for structured data: numerical and categorical columns such
-> as age, vehicle type, coverage, premium, deductible, and discount."
+> "In a traditional ML pipeline, the team prepares features, selects candidate
+> algorithms, trains task-specific parameters, tunes hyperparameters, and compares
+> the resulting models."
 
-> "The important detail is that this is zero-shot in the model-training sense.
-> The `fit` call prepares the table and supplies labeled examples as context. It
-> does not update the pretrained model weights for this particular quote table."
+> "With TabFM, we begin with pretrained model weights, supply context rows, and
+> immediately obtain candidate predictions. That can reduce the amount of custom
+> model-building required before we learn whether a use case is promising."
 
-> "That is attractive for rapid prototyping because we can try a new table
-> without building a task-specific neural network or running a hyperparameter
-> search first."
+### What does not disappear
 
-### Caveat
+Both paths still require:
 
-> "Zero-shot does not mean no data preparation or no validation. We still need a
-> representative context, a clean target, a separate holdout, and evidence that
-> the predictions are better than chance."
+- a meaningful and correctly defined target;
+- clean, representative, legally usable data;
+- separation between context or training rows and holdout rows;
+- appropriate baselines and metrics;
+- monitoring, security, governance, and human oversight.
+
+### Keep the comparison honest
+
+> "A foundation model is not automatically the best model. Logistic regression,
+> gradient-boosted trees, or another task-specific method may be cheaper, faster,
+> easier to explain, or more accurate."
+
+The benefit being tested is **reuse and speed to a candidate baseline**, not
+guaranteed superiority.
 
 ### Transition
 
-> "That leads to the feature-engineering question."
+> "So where might this different starting point be useful?"
 
 ---
 
-## Slide 5: Less handcrafted modeling—not zero
+## Slide 5: One interface, many tabular tasks
 
 ### What the slide shows
 
-The slide contrasts the traditional modeling path with the promise of a
-pretrained tabular model.
+The slide gives examples of classification and regression tasks and then states
+where a tabular foundation model may be especially worth testing.
 
 ### Say
 
-> "The benefit we are testing is reduced custom modeling work, not the elimination
-> of all data work."
+> "Classification asks which category applies: will a customer churn, is a
+> transaction suspicious, will a borrower default, or will a customer accept an
+> offer?"
 
-> "The notebook still defines the quote schema, creates the premium fields, checks
-> the target, separates context from holdout data, and builds the retrieval
-> features. TabFM reduces the need to train and tune a new model from scratch; it
-> does not remove domain knowledge or governance."
+> "Regression estimates a numeric outcome: sales, demand, cost, duration, or
+> severity."
 
-### Better claim
+> "A reusable tabular model is particularly interesting when a team wants a rapid
+> baseline, has many related prediction tasks, has limited labeled context, or
+> wants to test an interactive decision workflow before investing in a bespoke
+> model."
 
-> "The honest claim is that a pretrained model may shorten the path from a
-> historical table to a credible prototype. Whether it is accurate enough for a
-> real business use case must be measured."
+### Selection criteria
+
+Do not choose TabFM based only on model novelty. Compare:
+
+- predictive quality and calibration;
+- inference latency and computational cost;
+- available context size and data scale;
+- explainability and audit requirements;
+- licensing and deployment restrictions;
+- performance of simpler conventional methods.
+
+### Licensing boundary
+
+The published TabFM weights used by this notebook are non-commercial. The demo
+must not be presented as a deployable commercial insurance solution.
 
 ### Transition
 
-> "The next slide is the live interaction that mirrors IBM's insurance example."
+> "The notebook uses quote acceptance to make this abstract idea concrete."
 
 ---
 
-## Slide 6: Enter a quote, compare terms, recalculate
+## Slide 6: Demo—score a quote and test alternatives
 
 ### What the slide shows
 
-The slide shows a quote being built, scored, and compared with alternative
-deductibles and discounts. It also labels retrieval as a separate component.
+The slide combines the demo workflow with its observed holdout metrics:
+
+- TabFM ROC AUC: `0.622`;
+- logistic-regression ROC AUC: `0.592`;
+- no-skill ROC AUC: `0.500`;
+- TabFM and logistic average precision are almost equal.
 
 ### Say
 
-> "This is the decision-time loop. We enter a quote, calculate its premium,
-> obtain a TabFM acceptance score, and then generate alternative commercial
-> terms."
+> "Our synthetic task asks whether a customer will accept an automobile-insurance
+> quote. TabFM receives 100 labeled context rows and scores unseen holdout quotes."
 
-> "The presenter can show a concrete what-if question: what happens to the
-> modeled acceptance probability if the discount increases, or if the deductible
-> changes?"
+> "The ROC AUC of 0.622 is above the no-skill value of 0.5 and modestly above the
+> same-context logistic regression result of 0.592. Average precision is nearly
+> identical for TabFM and logistic regression. This is a modest positive result,
+> not a dramatic win."
 
-> "The similar-quote table provides historical context. It is not an explanation
-> of TabFM's internal reasoning; it is a separate retrieval tool that helps a
-> salesperson inspect comparable outcomes."
+> "After the evidence gate passes, an agent can enter an eligible quote, see its
+> model score, retrieve similar historical cases through a separate
+> nearest-neighbor layer, and compare alternative discounts and deductibles."
 
-### How to handle the result
+### State the workflow boundary
 
-Before discussing a live percentage, point to the evidence status:
+The target is **customer acceptance**, not underwriting approval. The demo does
+not help an agent persuade a review team to accept an ineligible customer.
+Underwriting, eligibility, pricing, fairness, compliance, and margin constraints
+would be separate controls applied before or around the scenario analysis.
 
-> "The notebook first checks whether TabFM has a held-out signal. If the evidence
-> gate fails, the displayed probability is a UI output, not a validated business
-> signal."
+### State the evidence boundary
 
-If the gate passes:
-
-> "On this synthetic holdout, TabFM demonstrated a ranking signal. That supports
-> the prototype hypothesis, but it is not evidence of production calibration or
-> customer ROI."
-
-If the gate does not pass:
-
-> "The workflow runs, but this execution did not establish useful predictive
-> performance. We can still demonstrate the interaction, but we should not sell
-> the score as reliable."
-
-### Business caveat
-
-> "The highest acceptance score is not automatically the best quote. A real
-> decision would also consider margin, underwriting rules, fairness, compliance,
-> and customer treatment."
+- The dataset is synthetic.
+- The metrics demonstrate modest held-out signal for this run.
+- Similar-case retrieval is not generated by TabFM.
+- What-if score changes are model sensitivity, not causal effects.
+- The result does not establish production accuracy, calibration, or ROI.
 
 ### Transition
 
-> "The final slide summarizes the architecture and the limits of the claim."
+> "The final slide separates the foundation-model promise from the evidence needed
+> to trust it."
 
 ---
 
-## Slide 7: What an LDM-style system does inside a business
+## Slide 7: Pretrained does not mean pre-validated
 
 ### What the slide shows
 
-The slide summarizes the reusable pattern:
+The slide summarizes the reusable technical loop:
 
-1. start with structured historical data,
-2. score a current case,
-3. retrieve similar prior cases,
-4. edit inputs and rerun,
-5. validate evidence before trusting the score.
+1. load a pretrained model;
+2. provide labeled context rows;
+3. predict unseen query rows;
+4. compare those predictions with baselines on held-out data;
+5. treat the result as useful only if the evidence supports it.
 
 ### Say
 
-> "The reusable idea is not a particular screen or model name. It is the loop:
-> historical records become context, a current case receives a score, similar
-> cases make the output concrete, and what-if edits support a decision."
+> "The promise is reuse. Instead of starting every tabular task with newly trained
+> model parameters, we start with a pretrained model that can interpret a new
+> task from labeled context."
 
-> "TabFM is one possible scoring component. Retrieval and UI are separate
-> components. The combination is what makes this an LDM-style prototype."
+> "The practical benefit may be faster experimentation and a shorter path to a
+> credible candidate baseline."
+
+> "But pretrained does not mean proven for our table. Trust still comes from
+> unseen data, appropriate baselines, uncertainty checks, calibration testing,
+> operational constraints, and governance."
 
 ### Closing claim
 
-> "If TabFM passes the evidence gate, this prototype supports the idea that a
-> pretrained tabular model can quickly power this interaction on the synthetic
-> task. The business claim still requires real quote data, governance, and a
-> controlled production experiment."
+> "A tabular foundation model gives us a new starting point, not an automatic
+> production solution. The right question is not 'Is foundation AI impressive?'
+> It is 'On this table, under these constraints, does the pretrained model provide
+> enough measured value to justify using it?'"
+
+### Optional IBM context
+
+If the IBM article is relevant to the audience, add only:
+
+> "IBM's LDM article inspired the decision-support interaction used in this demo.
+> The article does not disclose TabFM or establish that IBM's implementation uses
+> the same architecture."
 
 ---
 

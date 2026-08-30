@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LDM × TabFM - marimo demo deck</title>
+  <title>Tabular Foundation Models - TabFM demo deck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -502,7 +502,7 @@
 
       <!-- ============ SLIDES ============ -->
 
-            <!-- 01 Title -->
+      <!-- 01 Title -->
       <section class="slide active" data-screen-label="01 Title">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
@@ -512,19 +512,19 @@
         </div>
         <div class="s-cover">
           <div class="cmdline"><span class="p">$</span> marimo <span class="flag">run</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="cursor"></span></div>
-          <h1 class="cover-title">FROM DASHBOARDS<br />TO DECISION SUPPORT.</h1>
-          <p class="cover-sub">An LDM-style demo: evaluate a current case against historical examples, compare it with similar past cases, and explore alternative scenarios before deciding.</p>
+          <h1 class="cover-title">FOUNDATION MODELS<br />FOR TABLES.</h1>
+          <p class="cover-sub">TabFM applies the foundation-model idea to rows and columns: supply labeled examples as context, score new records, and test whether useful predictions are possible without training a task-specific model from scratch.</p>
           <div class="tags-row">
-            <span class="tag a">LDM-STYLE</span>
+            <span class="tag a">TABULAR DATA</span>
             <span class="tag g">TABFM</span>
-            <span class="tag g">WHAT-IF</span>
+            <span class="tag g">IN-CONTEXT PREDICTION</span>
           </div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"Most analytics teams today are very good at showing what already happened - dashboards, reports, summaries, trends. But those usually stop short of helping a user decide what to do in a live case. This demo recreates the pattern from the IBM LDM article: score a case, compare it to similar past cases, and test possible changes - using a pretrained tabular model called TabFM and an interactive marimo notebook."</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Foundation models are not only for language and images. Many business decisions live in tables: one row per customer, quote, transaction, or machine; one column per attribute. This presentation introduces TabFM, how it predicts from labeled context rows, how that differs from a traditional ML pipeline, and where the approach may be useful."</div>
       </section>
 
-      <!-- 02 IBM LDM Idea -->
-      <section class="slide" data-screen-label="02 IBM LDM Idea">
+      <!-- 02 Why Tables -->
+      <section class="slide" data-screen-label="02 Why Tables">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
@@ -532,51 +532,32 @@
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--concept large_database_models</span> <span class="cursor"></span></div>
-          <h2 class="h2">REPORT THE PAST.<br />OR ASSIST THE DECISION.</h2>
-          <div class="statement">IBM's LDM idea: systems that help users work directly with enterprise data in a smarter, more decision-oriented way.</div>
+          <div class="cmdline"><span class="p">$</span> tabular explain <span class="flag">--structure rows_columns_target</span> <span class="cursor"></span></div>
+          <h2 class="h2">A TABLE IS NOT<br />A BLOCK OF TEXT.</h2>
+          <div class="statement">Tabular prediction learns relationships among typed columns so it can estimate an outcome for a new row.</div>
           <div class="split">
             <div class="panel">
-              <div class="panel-head"><span class="tag a">RETROSPECTIVE</span> TRADITIONAL ANALYTICS</div>
-              <div class="panel-text">&gt; what happened?</div>
-              <div class="panel-text">&gt; how many?</div>
-              <div class="panel-text">&gt; where did performance change?</div>
-              <div class="panel-text">&gt; output: a dashboard</div>
+              <div class="panel-head"><span class="tag a">INPUT</span> FEATURES</div>
+              <div class="panel-text">&gt; each row is one case</div>
+              <div class="panel-text">&gt; columns have different meanings and types</div>
+              <div class="panel-text">&gt; numbers, categories, booleans, missing values</div>
+              <div class="panel-text">&gt; column relationships carry the signal</div>
             </div>
             <div class="panel">
-              <div class="panel-head"><span class="tag g">DECISION-TIME</span> LDM-STYLE ANALYTICS</div>
-              <div class="panel-text">&gt; what does this new case look like?</div>
-              <div class="panel-text">&gt; how risky or promising is it?</div>
-              <div class="panel-text">&gt; what similar cases have we seen before?</div>
-              <div class="panel-text">&gt; what if we change this input or scenario?</div>
+              <div class="panel-head"><span class="tag g">OUTPUT</span> TARGET</div>
+              <div class="panel-text">&gt; classification: which class?</div>
+              <div class="panel-text">&gt; regression: what numeric value?</div>
+              <div class="panel-text">&gt; example: will this quote be accepted?</div>
+              <div class="panel-text">&gt; result: score a previously unseen row</div>
             </div>
           </div>
-          <div class="hist-wrap">
-            <svg class="hist-svg" viewBox="0 0 1200 140" width="1200" height="140" role="img" aria-label="score distribution with new case marker">
-              <line class="axis" x1="30" y1="120" x2="1170" y2="120"/>
-              <rect class="bar" x="90" y="90" width="50" height="30"/>
-              <rect class="bar" x="170" y="80" width="50" height="40"/>
-              <rect class="bar" x="250" y="60" width="50" height="60"/>
-              <rect class="bar" x="330" y="55" width="50" height="65"/>
-              <rect class="bar" x="410" y="70" width="50" height="50"/>
-              <rect class="bar" x="710" y="75" width="50" height="45"/>
-              <rect class="bar" x="790" y="85" width="50" height="35"/>
-              <rect class="bar" x="870" y="95" width="50" height="25"/>
-              <rect class="bar" x="950" y="102" width="50" height="18"/>
-              <line class="mark" x1="520" y1="12" x2="520" y2="120"/>
-              <text class="lbl" x="34" y="22">count →</text>
-              <text class="lbl" x="1095" y="136">score →</text>
-              <text class="lbl-mark" x="532" y="18">new case</text>
-            </svg>
-            <div class="hist-label"># historical records set the context - the score marks where a new case lands</div>
-          </div>
-          <div class="meta-line"># historical records become intelligence · the model answers questions at decision time · not just at reporting time</div>
+          <div class="meta-line"># language models model token sequences; tabular models must reason over heterogeneous columns and row-level targets</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"IBM's Large Database Models idea is a shift from dashboards that describe the past to systems that actively assist a decision in the present. The insurance example makes this concrete: estimate whether a customer will accept a quote, retrieve similar prior quotes, then change the deductible or discount and recalculate."</div>
+        <div class="notes"><span class="n-label">speaker note</span>"A table has explicit structure. A number in the age column means something different from the same number in the premium column, and a category such as vehicle type is not prose. We provide feature columns, a target column, and examples of known outcomes; the prediction task is to estimate the target for a new row."</div>
       </section>
 
-      <!-- 03 LDM-style Mapping -->
-      <section class="slide" data-screen-label="03 LDM-style Mapping">
+      <!-- 03 In-context Prediction -->
+      <section class="slide" data-screen-label="03 In-context Prediction">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
@@ -584,31 +565,31 @@
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> ldm map <span class="flag">--notebook marimo</span> <span class="flag">--concept ldm</span> <span class="cursor"></span></div>
-          <h2 class="h2">WE REPRODUCED THE PATTERN.<br />NOT THE ARCHITECTURE.</h2>
+          <div class="cmdline"><span class="p">$</span> tabfm explain <span class="flag">--mode in_context</span> <span class="cursor"></span></div>
+          <h2 class="h2">PRETRAIN ON MANY TASKS.<br />ADAPT THROUGH CONTEXT.</h2>
           <div class="split">
             <div>
-              <div class="statement">This notebook is an LDM-style demonstration. It recreates the business functions described in the article using a pretrained tabular model, interactive controls, and historical-case retrieval.</div>
+              <div class="statement">A tabular foundation model arrives with pretrained weights. For a new table, labeled context rows describe the task; query rows are the cases to predict.</div>
               <div class="tags-row" style="margin-top: 30px;">
-                <span class="tag g">SAME INTERACTION PATTERN</span>
-                <span class="tag r">NOT IBM ARCHITECTURE</span>
+                <span class="tag g">PRETRAINED WEIGHTS</span>
+                <span class="tag a">NEW TABLE CONTEXT</span>
               </div>
-              <div class="meta-line" style="margin-top: 18px;"># demonstrating the same business interaction pattern with tools we can access today</div>
+              <div class="meta-line" style="margin-top: 18px;"># in this TabFM demo, fit() prepares labeled context; it does not update model weights</div>
             </div>
             <div class="steps">
-              <div class="step"><span class="tag g">01</span><span>enter a candidate insurance quote</span></div>
-              <div class="step"><span class="tag g">02</span><span>estimate likelihood of customer acceptance</span></div>
-              <div class="step"><span class="tag g">03</span><span>retrieve similar historical quotes and outcomes</span></div>
-              <div class="step"><span class="tag g">04</span><span>change the deductible or discount and recalculate</span></div>
-              <div class="step"><span class="tag g">05</span><span>validate TabFM on held-out rows before trusting the score</span></div>
+              <div class="step"><span class="tag g">01</span><span>load the pretrained tabular model</span></div>
+              <div class="step"><span class="tag g">02</span><span>provide a small labeled table as context</span></div>
+              <div class="step"><span class="tag g">03</span><span>present unseen rows with the same schema</span></div>
+              <div class="step"><span class="tag g">04</span><span>the model infers the task and returns predictions</span></div>
+              <div class="step"><span class="tag a">05</span><span>validate those predictions on held-out labels</span></div>
             </div>
           </div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"Be precise: the notebook is not IBM's product architecture. It demonstrates the same business interaction pattern with tools we can access today - a pretrained tabular model, interactive controls, and historical-case retrieval."</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Traditional transfer learning often fine-tunes model weights. TabFM can instead infer a new tabular task from labeled examples supplied in context. In this notebook, fit is familiar scikit-learn syntax, but it prepares the table and context rather than training the pretrained neural network from scratch."</div>
       </section>
 
-     <!-- 04 Why TabFM -->
-     <section class="slide" data-screen-label="04 Why TabFM">
+      <!-- 04 Traditional ML Comparison -->
+      <section class="slide" data-screen-label="04 Traditional ML Comparison">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
@@ -616,34 +597,34 @@
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--model tabfm</span> <span class="cursor"></span></div>
-          <h2 class="h2">ROWS, COLUMNS, ATTRIBUTES.<br />NOT ESSAYS.</h2>
+          <div class="cmdline"><span class="p">$</span> ml compare <span class="flag">--traditional</span> <span class="flag">--foundation_model</span> <span class="cursor"></span></div>
+          <h2 class="h2">A DIFFERENT STARTING POINT.<br />NOT A FREE PASS.</h2>
           <div class="split">
-           <pre class="code"><span class="c"># supply 100 historical quotes as in-context examples</span>
-tabfm_model = tabfm_v1_0_0.load(model_type=<span class="s">"classification"</span>)
-classifier = <span class="v">TabFMClassifier</span>(model=tabfm_model)
-classifier.fit(X_context, y_context.to_numpy())
- 
-<span class="c"># evaluate unseen quotes before using the interactive score</span>
-test_probabilities = classifier.predict_proba(X_test)
-acceptance_scores = pd.Series(
-    test_probabilities[:, positive_index],
-    index=X_test.index,
-    name=<span class="s">"tabfm_acceptance_probability"</span>,
-)</pre>
-           <div class="steps">
-             <div class="step"><span class="tag g">PRETRAINED</span><span>foundation model built for structured data - not text</span></div>
-             <div class="step"><span class="tag a">LESS FROM SCRATCH</span><span>reduces manual model-building before value testing</span></div>
-             <div class="step"><span class="tag g">CREDIBLE</span><span>foundation-model thinking beyond text</span></div>
-             <div class="step"><span class="tag g">LOWER BARRIER</span><span>advanced analytics without deep ML infrastructure</span></div>
-           </div>
-         </div>
-       </div>
-       <div class="notes"><span class="n-label">speaker note</span>"TabFM is built for rows, columns, and mixed tabular features. Its fit call prepares the table and provides labeled quotes as context; it does not update the pretrained weights. The key discipline is to evaluate unseen quotes before interpreting any live probability."</div>
-     </section>
+            <div class="panel">
+              <div class="panel-head"><span class="tag r">TRADITIONAL PATH</span></div>
+              <div class="panel-text">&gt; prepare features and encodings</div>
+              <div class="panel-text">&gt; choose algorithms and hyperparameters</div>
+              <div class="panel-text">&gt; train a model for this task</div>
+              <div class="panel-text">&gt; compare, tune, and retrain</div>
+              <div class="panel-text">&gt; strong task-specific control</div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><span class="tag g">TABFM PATH</span></div>
+              <div class="panel-text">&gt; load pretrained model</div>
+              <div class="panel-text">&gt; supply labeled context rows</div>
+              <div class="panel-text">&gt; predict without weight updates</div>
+              <div class="panel-text">&gt; benchmark immediately</div>
+              <div class="panel-text">&gt; faster path to a candidate baseline</div>
+            </div>
+          </div>
+          <div class="meta-line"><span class="ok-tag">shared requirements:</span> clean target · representative data · holdout evaluation · monitoring · governance</div>
+          <div class="meta-line"># a conventional model may still be simpler, faster, cheaper, or more accurate - compare rather than assume</div>
+        </div>
+        <div class="notes"><span class="n-label">speaker note</span>"The main change is the starting point. Traditional ML trains a model specifically for the current dataset. TabFM brings reusable pretrained behavior and adapts through context. That can shorten experimentation, but it does not remove data quality, validation, governance, or the need to compare against simple task-specific baselines."</div>
+      </section>
 
-      <!-- 05 Feature Engineering -->
-      <section class="slide" data-screen-label="05 Feature Engineering">
+      <!-- 05 Use Cases -->
+      <section class="slide" data-screen-label="05 Use Cases">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
@@ -651,32 +632,32 @@ acceptance_scores = pd.Series(
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> ldm explain <span class="flag">--feature_engineering</span> <span class="cursor"></span></div>
-          <h2 class="h2">LESS HANDCRAFTED MODELING.<br />NOT ZERO.</h2>
+          <div class="cmdline"><span class="p">$</span> tabfm list <span class="flag">--use-cases</span> <span class="cursor"></span></div>
+          <h2 class="h2">ONE PREDICTION INTERFACE.<br />MANY TABULAR TASKS.</h2>
           <div class="split">
             <div class="panel">
-              <div class="panel-head"><span class="tag r">TRADITIONAL PATH</span></div>
-              <div class="panel-text">&gt; choose features</div>
-              <div class="panel-text">&gt; engineer transformations</div>
-              <div class="panel-text">&gt; train custom models</div>
-              <div class="panel-text">&gt; iterate many times</div>
-              <div class="panel-text">&gt; long delay from data to decision tool</div>
+              <div class="panel-head"><span class="tag g">CLASSIFICATION</span></div>
+              <div class="panel-text">&gt; customer churn or conversion</div>
+              <div class="panel-text">&gt; fraud or anomaly triage</div>
+              <div class="panel-text">&gt; loan default or claim outcome</div>
+              <div class="panel-text">&gt; quote or offer acceptance</div>
             </div>
             <div class="panel">
-              <div class="panel-head"><span class="tag g">LDM-STYLE PROMISE</span></div>
-              <div class="panel-text">&gt; model + historical data carry more intelligence</div>
-              <div class="panel-text">&gt; fewer bespoke feature pipelines</div>
-              <div class="panel-text">&gt; prototype business value earlier</div>
+              <div class="panel-head"><span class="tag a">REGRESSION</span></div>
+              <div class="panel-text">&gt; demand or sales amount</div>
+              <div class="panel-text">&gt; cost, duration, or severity</div>
+              <div class="panel-text">&gt; operational performance</div>
+              <div class="panel-text">&gt; numeric outcomes from mixed features</div>
             </div>
           </div>
-          <div class="meta-line"><span class="ok-tag">✓ reduced model training work</span> - not zero data work · the demo still defines quote fields, evaluation, and guardrails</div>
-          <div class="meta-line"># domain knowledge does not disappear · more intelligence comes from model + historical data</div>
+          <div class="meta-line"><span class="ok-tag">especially useful to test:</span> rapid baselines · repeated tasks across tables · limited labeled context · interactive prototypes</div>
+          <div class="meta-line"># not every table is a good fit: compare accuracy, latency, cost, interpretability, licensing, and operational constraints</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"Traditionally, getting from database rows to a useful predictive workflow requires a lot of data-science work: choosing features, engineering transformations, training custom models, iterating many times. The LDM idea is attractive because it promises to reduce that custom effort significantly. The right claim is not 'no data-science work is needed.' The right claim is 'the amount of custom work needed to reach a useful prototype can be much lower.'"</div>
+        <div class="notes"><span class="n-label">speaker note</span>"Tabular foundation models can expose a common classification or regression interface across many business tables. Their practical promise is rapid task exploration and reuse, not guaranteed superiority. Highly regulated, large-scale, latency-sensitive, or easily solved tasks may still favor conventional models."</div>
       </section>
 
-     <!-- 06 Quote Optimization -->
-     <section class="slide" data-screen-label="06 Quote Optimization">
+      <!-- 06 Quote Acceptance Demo -->
+      <section class="slide" data-screen-label="06 Quote Acceptance Demo">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
@@ -685,42 +666,30 @@ acceptance_scores = pd.Series(
         </div>
         <div class="s-body">
           <div class="cmdline"><span class="p">$</span> molab <span class="flag">open</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="cursor"></span></div>
-          <h2 class="h2">ENTER A QUOTE.<br />COMPARE TERMS. RECALCULATE.</h2>
-          <div class="split">
-           <pre class="code"><span class="c"># build a quote from the interactive controls</span>
-candidate_quote = build_quote(
-    coverage_tier=coverage.value,
-    deductible=deductible.value,
-    discount_pct=discount_pct.value,
-    customer_age=customer_age.value,
-    vehicle_type=vehicle.value,
-)
+         <h2 class="h2">DEMO: SCORE A QUOTE.<br />TEST ALTERNATIVE TERMS.</h2>
+         <div class="split">
+           <pre class="code"><span class="c"># measured on unseen synthetic quotes</span>
+                        ROC AUC    Avg precision
+TabFM                      <span class="v">0.622</span>        <span class="v">0.762</span>
+Logistic regression        0.592        0.761
+No-skill baseline          0.500        0.682
 
-<span class="c"># score it only after the held-out evidence gate</span>
-candidate_probability = float(
-    classifier.predict_proba(candidate_quote[feature_columns])[0, positive_index]
-)</pre>
-           <pre class="code"><span class="c"># compare alternative commercial terms</span>
-scenario_quotes[<span class="s">"acceptance_probability"</span>] = (
-    classifier.predict_proba(
-        scenario_quotes[feature_columns]
-    )[:, positive_index]
-)
-
-<span class="c"># retrieval is a separate, explicit component</span>
-similar_quotes = quote_history.iloc[neighbor_positions]</pre>
-          </div>
-         <div class="tags-row">
-           <span class="tag g">QUOTE ACCEPTANCE</span>
-           <span class="tag a">WHAT-IF</span>
-           <span class="tag g">SIMILAR RETRIEVAL</span>
+<span class="c"># result: modest held-out ranking signal</span></pre>
+           <div class="steps">
+             <div class="step"><span class="tag g">01</span><span>agent enters an eligible customer quote</span></div>
+             <div class="step"><span class="tag g">02</span><span>TabFM estimates customer acceptance</span></div>
+             <div class="step"><span class="tag g">03</span><span>separate retrieval finds similar quotes</span></div>
+             <div class="step"><span class="tag g">04</span><span>agent compares discount and deductible scenarios</span></div>
+             <div class="step"><span class="tag a">LIMIT</span><span>scenario scores are not causal or underwriting approval</span></div>
+           </div>
          </div>
+         <div class="meta-line"># synthetic data demonstrates the workflow and evaluation discipline - not real insurance performance</div>
        </div>
-       <div class="notes"><span class="n-label">speaker note</span>"This directly recreates IBM's insurance example: enter a quote, estimate acceptance, inspect similar historical quotes, and change deductible or discount terms. The notebook first requires held-out evidence so a probability is not confused with proof that the model works."</div>
+       <div class="notes"><span class="n-label">speaker note</span>"The notebook makes the concept concrete. An agent scores an eligible quote for customer acceptance, inspects separately retrieved historical cases, and tests alternative commercial terms. TabFM beat chance and was close to the logistic baseline on this synthetic run, but the result is modest and does not establish production insurance value."</div>
      </section>
 
-      <!-- 07 Technical Summary -->
-      <section class="slide" data-screen-label="07 Technical Summary">
+     <!-- 07 Takeaway -->
+     <section class="slide" data-screen-label="07 Takeaway">
         <div class="term-bar">
           <div class="dots"><span class="dot red"></span><span class="dot green"></span></div>
           <div class="path">marimo · ldm_tabfm_marimo_demo.py</div>
@@ -728,33 +697,34 @@ similar_quotes = quote_history.iloc[neighbor_positions]</pre>
           <button class="theme-switch" type="button" data-theme-btn aria-label="Toggle light or dark mode">[ DARK ]</button>
         </div>
         <div class="s-body">
-          <div class="cmdline"><span class="p">$</span> ldm summarize <span class="flag">--mechanics</span> <span class="flag">--business-use</span> <span class="cursor"></span></div>
-          <h2 class="h2">WHAT AN LDM-STYLE SYSTEM<br />DOES INSIDE A BUSINESS.</h2>
+          <div class="cmdline"><span class="p">$</span> tabfm summarize <span class="flag">--promise</span> <span class="flag">--limits</span> <span class="cursor"></span></div>
+          <h2 class="h2">PRETRAINED DOES NOT MEAN<br />PRE-VALIDATED.</h2>
           <div class="split">
-            <pre class="code"><span class="c"># technical pattern behind the demo</span>
-historical_rows  →  model context
-current_case     →  tabfm score(case)
-current_case     →  retrieve_similar(case, k=5)
-edited_case      →  rerun score + compare delta
+            <pre class="code"><span class="c"># reusable tabular foundation-model loop</span>
+pretrained_model
+    + labeled_context_rows
+    + unseen_query_rows
+    = candidate_predictions
 
-<span class="c"># operator sees:</span>
-signal + neighbors + scenario change</pre>
+candidate_predictions
+    + holdout_baselines
+    + uncertainty_checks
+    = evidence</pre>
             <div class="steps">
-              <div class="step"><span class="tag g">01</span><span>treat historical rows as usable context, not passive storage</span></div>
-              <div class="step"><span class="tag g">02</span><span>score a live case against learned patterns in structured data</span></div>
-              <div class="step"><span class="tag g">03</span><span>retrieve similar prior cases so the output has concrete context</span></div>
-              <div class="step"><span class="tag g">04</span><span>edit inputs and rerun immediately for what-if analysis</span></div>
-              <div class="step"><span class="tag a">05</span><span>show held-out evidence and uncertainty before trusting the live score</span></div>
+              <div class="step"><span class="tag g">PROMISE</span><span>reuse learned tabular behavior across new tasks</span></div>
+              <div class="step"><span class="tag g">BENEFIT</span><span>reach a credible candidate baseline sooner</span></div>
+              <div class="step"><span class="tag a">REQUIREMENT</span><span>validate against simple task-specific alternatives</span></div>
+              <div class="step"><span class="tag r">LIMIT</span><span>no automatic causality, calibration, fairness, or governance</span></div>
             </div>
           </div>
-          <div class="meta-line"># in this prototype, TabFM provides the tabular scoring and a helper retrieval layer provides similar-case lookup</div>
           <div class="tags-row">
-            <span class="tag g">LIVE SCORING</span>
-            <span class="tag g">SIMILAR CASES</span>
-            <span class="tag a">WHAT-IF ANALYSIS</span>
+            <span class="tag g">FASTER EXPERIMENTATION</span>
+            <span class="tag a">MEASURE FIRST</span>
+            <span class="tag r">NON-COMMERCIAL WEIGHTS</span>
           </div>
+          <div class="meta-line"># IBM's LDM article inspired the decision-support workflow; it does not disclose TabFM or establish IBM's model architecture</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"This is the technical pattern I want people to remember. An LDM-style workflow does not stop at storing rows or charting aggregates. It uses historical rows as context, scores a live case, brings back similar prior cases, and lets the user test changes before acting. In this demo, TabFM handles tabular pattern recognition, the retrieval layer brings back relevant examples, and marimo turns that into an interactive workflow. The business value comes from that combination: faster triage, more grounded decisions, and less bespoke model-building before a team can test whether the workflow is useful."</div>
+        <div class="notes"><span class="n-label">speaker note</span>"The takeaway is not that foundation models replace every tabular pipeline. They provide a new starting point: a pretrained model can attempt a new task from labeled context rather than task-specific weight training. The value is faster, reusable experimentation; trust still comes from holdout evidence, baselines, operational fit, and governance."</div>
       </section>
 
       <!-- ============ /SLIDES ============ -->
