@@ -1068,6 +1068,34 @@ Displays the highest-ranked candidate combinations of discount and deductible.
 > "In a real implementation, this ranking would be constrained by margin,
 > underwriting, fairness, compliance, and business policy."
 
+### Who uses this workflow?
+
+The intended user is an insurance **agent, broker, or sales/service advisor**
+who is discussing quote terms with a customer. The workflow helps that person
+compare alternatives such as discount and deductible and see which options the
+model associates with a higher chance that the customer will accept the quote.
+
+This is different from asking whether an internal review team will approve the
+customer. In the current notebook, the target is:
+
+> "Did the customer accept the quote?"
+
+It is not:
+
+> "Will underwriting approve the risk?"
+
+Therefore, the agent is not using the tool to persuade a review team to approve
+an otherwise unacceptable risk. Underwriting eligibility, risk selection,
+fraud checks, regulatory rules, margin requirements, and approval authority
+would remain separate controls. A real implementation could apply those
+constraints first and use quote optimization only among the terms that are
+eligible to offer.
+
+If the intended business question were instead review-team approval, the
+notebook would need a different target label, appropriate underwriting data,
+and a separate workflow. The current acceptance model should not be described
+as an underwriting approval model.
+
 ### Relevant code
 
 ```python
