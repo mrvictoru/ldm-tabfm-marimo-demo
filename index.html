@@ -666,26 +666,27 @@
         </div>
         <div class="s-body">
           <div class="cmdline"><span class="p">$</span> molab <span class="flag">open</span> <span class="v">ldm_tabfm_marimo_demo.py</span> <span class="cursor"></span></div>
-         <h2 class="h2">DEMO: SCORE A QUOTE.<br />TEST ALTERNATIVE TERMS.</h2>
+         <h2 class="h2">DEMO: SCORE A QUOTE.<br />THEN REUSE THE SAME TABLE.</h2>
          <div class="split">
-           <pre class="code"><span class="c"># measured on unseen synthetic quotes</span>
+           <pre class="code"><span class="c"># demo 1 measured on unseen synthetic quotes</span>
                         ROC AUC    Avg precision
 TabFM                      <span class="v">0.622</span>        <span class="v">0.762</span>
 Logistic regression        0.592        0.761
 No-skill baseline          0.500        0.682
 
-<span class="c"># result: modest held-out ranking signal</span></pre>
+<span class="c"># demo 2: same quote, expected loss, MAE vs mean</span>
+<span class="c"># read live notebook numbers - do not invent them</span></pre>
            <div class="steps">
              <div class="step"><span class="tag g">01</span><span>agent enters an eligible customer quote</span></div>
              <div class="step"><span class="tag g">02</span><span>TabFM estimates customer acceptance</span></div>
-             <div class="step"><span class="tag g">03</span><span>separate retrieval finds similar quotes</span></div>
-             <div class="step"><span class="tag g">04</span><span>agent compares discount and deductible scenarios</span></div>
-             <div class="step"><span class="tag a">LIMIT</span><span>scenario scores are not causal or underwriting approval</span></div>
+             <div class="step"><span class="tag g">03</span><span>named offers and similar quotes are ranked</span></div>
+             <div class="step"><span class="tag g">04</span><span>same table, new target: expected loss cost</span></div>
+             <div class="step"><span class="tag a">LIMIT</span><span>scores are not causal, calibrated, or underwriting approval</span></div>
            </div>
          </div>
          <div class="meta-line"># synthetic data demonstrates the workflow and evaluation discipline - not real insurance performance</div>
        </div>
-       <div class="notes"><span class="n-label">speaker note</span>"The notebook makes the concept concrete. An agent scores an eligible quote for customer acceptance, inspects separately retrieved historical cases, and tests alternative commercial terms. TabFM beat chance and was close to the logistic baseline on this synthetic run, but the result is modest and does not establish production insurance value."</div>
+       <div class="notes"><span class="n-label">speaker note</span>"The notebook makes reuse concrete. Demo 1 scores quote acceptance, ranks named offers, and retrieves similar cases. Demo 2 keeps the same 100 context rows and asks expected loss, with its own MAE gate. Classification beat chance modestly on this synthetic run; do not invent Demo 2 numbers on the slide."</div>
      </section>
 
      <!-- 07 Takeaway -->
@@ -713,7 +714,7 @@ candidate_predictions
             <div class="steps">
               <div class="step"><span class="tag g">PROMISE</span><span>reuse learned tabular behavior across new tasks</span></div>
               <div class="step"><span class="tag g">BENEFIT</span><span>reach a credible candidate baseline sooner</span></div>
-              <div class="step"><span class="tag a">REQUIREMENT</span><span>validate against simple task-specific alternatives</span></div>
+              <div class="step"><span class="tag a">REQUIREMENT</span><span>a new target on the same table still needs its own evidence gate</span></div>
               <div class="step"><span class="tag r">LIMIT</span><span>no automatic causality, calibration, fairness, or governance</span></div>
             </div>
           </div>
@@ -724,7 +725,7 @@ candidate_predictions
           </div>
           <div class="meta-line"># IBM's LDM article inspired the decision-support workflow; it does not disclose TabFM or establish IBM's model architecture</div>
         </div>
-        <div class="notes"><span class="n-label">speaker note</span>"The takeaway is not that foundation models replace every tabular pipeline. They provide a new starting point: a pretrained model can attempt a new task from labeled context rather than task-specific weight training. The value is faster, reusable experimentation; trust still comes from holdout evidence, baselines, operational fit, and governance."</div>
+          <div class="notes"><span class="n-label">speaker note</span>"The takeaway is not that foundation models replace every tabular pipeline. They provide a new starting point: a pretrained model can attempt a new task from labeled context rather than task-specific weight training. Reuse is real in the notebook - acceptance, then expected loss - but a new target still needs its own evidence gate. Trust comes from holdout evidence, baselines, operational fit, and governance."</div>
       </section>
 
       <!-- ============ /SLIDES ============ -->
